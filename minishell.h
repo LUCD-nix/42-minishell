@@ -6,7 +6,7 @@
 /*   By: alvanaut <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/31 14:55:24 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/07/31 14:55:36 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/07/31 18:53:04 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,8 +69,12 @@ typedef enum e_token_type
 
 typedef struct s_token
 {
+    char *value;
+    t_token_type type;
 	struct s_token	*next;
+    struct s_token  *prec;
 }	t_token;
+
 
 typedef struct s_command
 {
@@ -82,5 +86,15 @@ typedef struct s_command
     int			fd_in;
     int			fd_out;
 }	t_command;
+
+/*init token + utils*/
+
+t_token *init_token(char *value, t_token_type type);
+void free_token(t_token *token);
+
+/*split argument*/
+
+char **args_splitted(int ac, char **av);
+
 
 #endif
