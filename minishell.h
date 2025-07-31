@@ -13,8 +13,10 @@
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
-#include <readline/readline.h>
-#include <readline/history.h>
+# include "libft/libft.h"
+
+# include <readline/readline.h>
+# include <readline/history.h>
 
 # include <stdio.h>      // printf, perror
 # include <stdlib.h>     // malloc, free, exit
@@ -67,7 +69,7 @@ typedef enum e_token_type
 
 typedef struct s_token
 {
-    s_token	*next;
+	struct s_token	*next;
 }	t_token;
 
 typedef struct s_command
