@@ -13,6 +13,11 @@
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
+# define STDIN 0
+# define STDOUT 1
+# define STDERR 2
+# define CHILD_PID 0
+
 # include "libft/libft.h"
 
 # include <readline/readline.h>
