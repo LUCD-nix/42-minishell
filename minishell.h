@@ -34,23 +34,23 @@
 
 typedef enum e_exec_type
 {
-    E_BINARY,
-    E_BUILTIN
-}   t_exec_type;
+	E_BINARY,
+	E_BUILTIN
+}	t_exec_type;
 
 typedef enum e_output
 {
-    O_STDOUT,
-    O_PIPE,
-    O_FILE
-}   t_output;
+	O_STDOUT,
+	O_PIPE,
+	O_FILE
+}	t_output;
 
 typedef enum e_input
 {
-    O_STDIN,
-    O_PIPE,
-    O_FILE
-}   t_input;
+	I_STDIN,
+	I_PIPE,
+	I_FILE
+}	t_input;
 
 typedef enum e_token_type
 {
@@ -63,22 +63,22 @@ typedef enum e_token_type
 	T_HEREDOC,
 	T_BUILTIN,
 	T_EXIT_STATUS
-};
+}	t_token_type;
 
 typedef struct s_token
 {
-    s_token *next;
-} t_token;
+    s_token	*next;
+}	t_token;
 
 typedef struct s_command
 {
-    t_exec_type type;
-    char        *command;
-    char        **args;
-    t_input     in;
-    t_output    out;
-    int         fd_in;
-    int         fd_out;
-}   t_command;
+    t_exec_type	type;
+    char		*command;
+    char		**args;
+    t_input		in;
+    t_output	out;
+    int			fd_in;
+    int			fd_out;
+}	t_command;
 
 #endif
