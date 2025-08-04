@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 11:05:37 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/08/04 11:25:51 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/08/04 16:59:58 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ t_ast	*init_ast(char **args, t_cmd_type type, t_redir *redir)
 	root = malloc(sizeof(t_ast));
 	if (!root)
 		return (NULL);
+    root->path = NULL;
 	root->args = args;
 	root->type = type;
 	root->redir = redir;
