@@ -12,7 +12,7 @@ LIBFT := ${LIBFTDIR}libft.a
 
 CFLAGS = -Wall -Wextra -Werror -ggdb3
 
-LFLAGS := -I${LIBFTDIR}
+LFLAGS := -I${LIBFTDIR} -lreadline -lhistory
 
 all: ${NAME}
 

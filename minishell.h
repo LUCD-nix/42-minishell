@@ -1,100 +1,105 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   minishell.h                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: alvanaut <marvin@42.fr>                    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/07/31 14:55:24 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/07/31 18:53:04 by alvanaut         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
 # include "libft/libft.h"
-
-# include <readline/readline.h>
+# include <dirent.h> // opendir, readdir, closedir
+# include <errno.h>  // errno
+# include <fcntl.h>  // open
 # include <readline/history.h>
+# include <readline/readline.h>
+# include <signal.h>    // signal, sigaction, sigemptyset, sigaddset, kill
+# include <stdbool.h>   // bool, true, false
+# include <stdio.h>     // printf, perror
+# include <stdlib.h>    // malloc, free, exit
+# include <string.h>    // strerror
+# include <sys/ioctl.h> // ioctl
+# include <sys/stat.h>  // stat, lstat, fstat
+# include <sys/types.h> // wait, waitpid, wait3, wait4, stat, lstat, fstat,
+						// opendir, readdir, closedir
+# include <sys/wait.h>  // wait, waitpid, wait3, wait4
+# include <termcap.h>   // tgetent, tgetflag, tgetnum, tgetstr, tgoto, tputs
+# include <termios.h>   // tcsetattr, tcgetattr
+# include <unistd.h>    // write, access, read, close, fork, dup, dup2, getcwd,
+						// chdir, execve, isatty, ttyname, ttyslot
 
-# include <stdio.h>      // printf, perror
-# include <stdlib.h>     // malloc, free, exit
-# include <unistd.h>     // write, access, read, close, fork, dup, dup2, getcwd, chdir, execve, isatty, ttyname, ttyslot
-# include <fcntl.h>      // open
-# include <sys/types.h>  // wait, waitpid, wait3, wait4, stat, lstat, fstat, opendir, readdir, closedir
-# include <sys/stat.h>   // stat, lstat, fstat
-# include <dirent.h>     // opendir, readdir, closedir
-# include <sys/wait.h>   // wait, waitpid, wait3, wait4
-# include <signal.h>     // signal, sigaction, sigemptyset, sigaddset, kill
-# include <string.h>     // strerror
-# include <termios.h>    // tcsetattr, tcgetattr
-# include <termcap.h>    // tgetent, tgetflag, tgetnum, tgetstr, tgoto, tputs
-# include <sys/ioctl.h>  // ioctl
-# include <errno.h>      // errno
-# include <stdbool.h>    // bool, true, false
-
-typedef enum e_exec_type
+typedef enum e_cmd_type
 {
-	E_BINARY,
-	E_BUILTIN
-}	t_exec_type;
+	CMD_SIMPLE,
+	CMD_PIPE,
+	CMD_AND,
+	CMD_OR,
+	CMD_LIST
+}					t_cmd_type;
 
-typedef enum e_output
+typedef enum e_reidr_type
 {
-	O_STDOUT,
-	O_PIPE,
-	O_FILE
-}	t_output;
-
-typedef enum e_input
-{
-	I_STDIN,
-	I_PIPE,
-	I_FILE
-}	t_input;
+	REDIR_IN,
+	REDIR_OUT,
+	REDIR_APPEND,
+	REDIR_HEREDOC
+}					t_redir_type;
 
 typedef enum e_token_type
 {
 	T_WORD,
-	T_COMMAND,
-	T_REDIRECT_IN,
-	T_REDIRECT_OUT,
-	T_APPEND,
 	T_PIPE,
+	T_AND,
+	T_OR,
+	T_REDIR_IN,
+	T_REDIR_OUT,
+	T_APPEND,
 	T_HEREDOC,
-	T_BUILTIN,
-	T_EXIT_STATUS
-}	t_token_type;
+	T_LPAREN,
+	T_RPAREN
+}					t_token_type;
 
 typedef struct s_token
 {
-    char *value;
-    t_token_type type;
+	char			*value;
+	t_token_type	type;
 	struct s_token	*next;
-    struct s_token  *prec;
-}	t_token;
+}					t_token;
 
-
-typedef struct s_command
+typedef struct s_redir
 {
-    t_exec_type	type;
-    char		*command;
-    char		**args;
-    t_input		in;
-    t_output	out;
-    int			fd_in;
-    int			fd_out;
-}	t_command;
+	t_redir_type	type;
+	char			*filename;
+	struct s_redir	*next;
+}					t_redir;
 
-/*init token + utils*/
+typedef struct s_ast
+{
+	char			**args;
+	t_cmd_type		type;
+	t_redir			*redir;
+	struct s_ast	*left;
+	struct s_ast	*right;
+}					t_ast;
 
-t_token *init_token(char *value, t_token_type type);
-void free_token(t_token *token);
+/*---Debugs utils---*/
 
-/*split argument*/
+void				print_token(t_token *token);
 
-char **args_splitted(int ac, char **av);
+/*---Tokenizer---*/
 
+t_token				*init_token(char *value, t_token_type type);
+void				free_token(t_token *token);
+t_token_type		get_token_type(const char *str);
+int					ft_isspace(char c);
+
+/*---Lexer---*/
+
+int is_operator_sign(char c);
+int is_separator(const char *s);
+void add_token(char **tokens, int *count, char *token);
+char *in_quote(const char *str);
+
+/*---Ast---*/
+
+t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
+t_redir				*init_redir(char *filename, t_redir_type type);
+void				free_args(char **args);
+void				free_redir(t_redir *redir);
+void				free_ast(t_ast *root);
 
 #endif
