@@ -21,6 +21,9 @@
 # include <termios.h>   // tcsetattr, tcgetattr
 # include <unistd.h>    // write, access, read, close, fork, dup, dup2, getcwd,
 						// chdir, execve, isatty, ttyname, ttyslot
+# define PIPE_OUT 0
+# define PIPE_IN 1
+# define CHILD_PID 0
 
 typedef enum e_cmd_type
 {
@@ -28,10 +31,9 @@ typedef enum e_cmd_type
 	CMD_PIPE,
 	CMD_AND,
 	CMD_OR,
-	CMD_LIST
 }					t_cmd_type;
 
-typedef enum e_reidr_type
+typedef enum e_redir_type
 {
 	REDIR_IN,
 	REDIR_OUT,
@@ -69,6 +71,7 @@ typedef struct s_redir
 
 typedef struct s_ast
 {
+	char			*path;
 	char			**args;
 	t_cmd_type		type;
 	t_redir			*redir;
