@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer_utils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alvanaut <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 12:22:47 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/08/04 13:05:46 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/08/04 17:21:10 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,9 @@ int     is_separator(const char *s)
 {
     return (ft_strcmp(s, "&&") == 0 || ft_strcmp(s, "||") == 0 ||
             ft_strcmp(s, ">>") == 0 || ft_strcmp(s, "<<") == 0 ||
-            ft_strcmp(s, "|") == 0 || ft_strcmp(s, "&") == 0 || 
+            ft_strcmp(s, "|") == 0 || ft_strcmp(s, "&") == 0 ||
             ft_strcmp(s, "<") == 0 || ft_strcmp(s, ">") == 0 ||
-            ft_strcmp(s, "(") == 0 || ft_strcmp(s, ')') == 0);
+            ft_strcmp(s, "(") == 0 || ft_strcmp(s, ")") == 0);
 }
 
 void    add_token(char **tokens, int *count, char *token)

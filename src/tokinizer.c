@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parsing.c                                          :+:      :+:    :+:   */
+/*   tokinizer.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 10:02:23 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/08/04 10:03:58 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/08/04 17:21:36 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ char	*read_line(void)
 	return (line);
 }
 
-static int	word_count(const char *line)
+/* static int	word_count(const char *line)
 {
 	int	i;
 	int	count;
@@ -45,7 +45,7 @@ static int	word_count(const char *line)
 		i++;
 	}
 	return (count);
-}
+} */
 
 t_token_type	get_token_type(const char *str)
 {
@@ -86,7 +86,7 @@ t_token	*word_to_token(const char **tab)
 		new = init_token((char *)tab[i], get_token_type(tab[i]));
 		if (!new)
 		{
-			free_token_list(head);
+			free_token(head);
 			return (NULL);
 		}
 		if (!head)

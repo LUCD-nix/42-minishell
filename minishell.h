@@ -15,12 +15,15 @@
 # include <sys/ioctl.h> // ioctl
 # include <sys/stat.h>  // stat, lstat, fstat
 # include <sys/types.h> // wait, waitpid, wait3, wait4, stat, lstat, fstat,
-						// opendir, readdir, closedir
-# include <sys/wait.h>  // wait, waitpid, wait3, wait4
-# include <termcap.h>   // tgetent, tgetflag, tgetnum, tgetstr, tgoto, tputs
-# include <termios.h>   // tcsetattr, tcgetattr
-# include <unistd.h>    // write, access, read, close, fork, dup, dup2, getcwd,
-						// chdir, execve, isatty, ttyname, ttyslot
+// opendir, readdir,
+// closedir
+# include <sys/wait.h> // wait, waitpid, wait3, wait4
+# include <termcap.h>  // tgetent, tgetflag, tgetnum, tgetstr, tgoto, tputs
+# include <termios.h>  // tcsetattr, tcgetattr
+# include <unistd.h>   // write, access, read, close, fork, dup, dup2, getcwd,
+// chdir, execve, isatty, ttyname, ttyslot
+
+# define MAX_TOKENS 1024
 
 typedef enum e_cmd_type
 {
@@ -28,7 +31,6 @@ typedef enum e_cmd_type
 	CMD_PIPE,
 	CMD_AND,
 	CMD_OR,
-	CMD_LIST
 }					t_cmd_type;
 
 typedef enum e_reidr_type
@@ -69,6 +71,7 @@ typedef struct s_redir
 
 typedef struct s_ast
 {
+	char			*path;
 	char			**args;
 	t_cmd_type		type;
 	t_redir			*redir;
@@ -78,7 +81,7 @@ typedef struct s_ast
 
 /*---Debugs utils---*/
 
-void				print_token(t_token *token);
+void				print_tokens(char **tokens);
 
 /*---Tokenizer---*/
 
@@ -86,13 +89,19 @@ t_token				*init_token(char *value, t_token_type type);
 void				free_token(t_token *token);
 t_token_type		get_token_type(const char *str);
 int					ft_isspace(char c);
+char				*read_line(void);
 
 /*---Lexer---*/
 
-int is_operator_sign(char c);
-int is_separator(const char *s);
-void add_token(char **tokens, int *count, char *token);
-char *in_quote(const char *str);
+int					is_operator_sign(char c);
+int					is_separator(const char *s);
+void				add_token(char **tokens, int *count, char *token);
+char				*in_quote(const char *str);
+void				handle_word(const char *line, char **tokens, int *count,
+						int *i);
+int					process_token(const char *line, char **tokens, int *count,
+						int i);
+char				**split_line_smart(const char *line);
 
 /*---Ast---*/
 
