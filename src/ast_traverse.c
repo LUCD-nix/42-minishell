@@ -15,47 +15,29 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int	close_and_redirect(int to_close, int to_redirect)
+// TODO : replace all the return (-1) with appropriate error functions
+//
+int	create_pipe(t_ast *writer, t_ast *reader)
 {
-	if (close(to_close) == -1)
+	int	pipe_fd[2];
+	int	status;
+
+	status = pipe(pipe_fd);
+	if (status == -1)
 		return (-1);
-	if (dup2(to_redirect, to_close) == -1)
-		return (-1);
+	writer->fd_out = pipe_fd[PIPE_IN];
+	reader->fd_in = pipe_fd[PIPE_OUT];
 	return (0);
 }
 
-int	redirect_file(t_redir *lst)
-{
-	int		oflag;
-	int		fd;
-	int		io;
-
-	while (lst)
-	{
-		if (lst->type == REDIR_APPEND)
-		{
-			oflag = O_APPEND | O_WRONLY | O_CREAT;
-			io = STDOUT_FILENO;
-		}
-		else if (lst->type == REDIR_OUT)
-		{
-			oflag = O_TRUNC | O_WRONLY | O_CREAT;
-			io = STDOUT_FILENO;
-		}
-		else if (lst->type == REDIR_IN)
-		{
-			oflag = O_RDONLY;
-			io = STDIN_FILENO;
-		}
-		fd = open(lst->filename, oflag);
-		if (fd == -1)
-			return (-1);
-		if (close_and_redirect(io, fd) == -1)
-			return (-1);
-		lst = lst->next;
-	}
-	return (0);
-}
+// int	close_and_redirect_fd(int to_close, int to_redirect)
+// {
+// 	if (close(to_close) == -1)
+// 		return (-1);
+// 	if (dup2(to_close, to_redirect) == -1)
+// 		return (-1);
+// 	return(0);
+// }
 
 int	run_process(t_ast *process)
 {
@@ -63,57 +45,60 @@ int	run_process(t_ast *process)
 	int			return_value;
 	extern char	*environ[];
 
-	if (redirect_file(process->redir) == -1)
-		;// TODO: error out
-	return_value = 0;
+	return_value = -1;
 	pid = fork();
 	if (pid == -1)
-		;// TODO : Error out
+		return (-1);
 	if (pid == CHILD_PID)
 	{
-		execve(process->path, process->args, environ);
+		if (process->fd_in != STDIN_FILENO
+			// && close_and_redirect_fd(STDIN_FILENO, process->fd_in) == -1)
+			&& dup2(process->fd_in, STDIN_FILENO) == -1)
+			return (-1);
+		if (process->fd_out != STDOUT_FILENO
+			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
+			return (-1);
+		execve(process->command->path, process->command->args, environ);
 	}
 	else
+	{
 		waitpid(pid, &return_value, 0);
+		if (process->fd_in != STDIN_FILENO)
+			close(process->fd_in);
+		if (process->fd_out != STDOUT_FILENO)
+			close(process->fd_out);
+	}
 	return (return_value);
 }
 
 int	traverse(t_ast *node)
 {
-	int		pepi[2];
 	int		res;
 
-	if (node->type == CMD_SIMPLE)
+	if (node->type == NODE_CMD)
 	{
 		return (run_process(node));
 	}
-	else if (node->type == CMD_PIPE)
+	else if (node->type == NODE_PIPE)
 	{
-		if (pipe(pepi) == -1)
-			; // TODO: exit;
-		if (close_and_redirect(STDOUT_FILENO, pepi[PIPE_IN]) == -1 ||
-			close_and_redirect(STDIN_FILENO, pepi[PIPE_OUT]) == -1)
+		if (create_pipe(node->left, node->right) == -1)
 			return (-1);
 		traverse(node->left);
-		close(pepi[PIPE_OUT]);
-		close(STDOUT_FILENO);
-		res = traverse(node->right);
-		close(pepi[PIPE_IN]);
-		return (res);
+		return (traverse(node->right));
 	}
 	// La deuxieme commande ne s'execute que si
 	// la premiere a termine correctement
-	else if (node->type == CMD_AND)
+	else if (node->type == NODE_AND)
 	{
 		res = traverse(node->left);
-		if (res == EXIT_FAILURE)
+		if (res != EXIT_SUCCESS)
 			return res;
 		else
 			return (traverse(node->right));
 	}
 	// La deuxieme commande ne s'execute que si
 	// la premiere a termine avec une erreur
-	else
+	else if (node->type == NODE_OR)
 	{
 		res = traverse(node->left);
 		if (res == EXIT_SUCCESS)
@@ -121,22 +106,31 @@ int	traverse(t_ast *node)
 		else
 			return (traverse(node->right));
 	}
+	return (0);
 }
 
 int main(void)
 {
 	t_ast	ls = {
-		.type = CMD_SIMPLE,
-		.path = "/usr/bin/ls",
-		.args = (char *[3]) {"ls", "-la", NULL},
+		.type = NODE_CMD,
+		.command = &(t_command) {
+			.path = "/usr/bin/ls",
+			.args = (char *[3]) {"ls", "-la", NULL},
+		},
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
 	};
 	t_ast	wc = {
-		.type = CMD_SIMPLE,
-		.path = "/usr/bin/wc",
-		.args = (char *[3]) {"wc", "-l", NULL},
+		.type = NODE_CMD,
+		.command = &(t_command) {
+			.path = "/usr/bin/wc",
+			.args = (char *[3]) {"wc", "-l", NULL},
+		},
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
 	};
 	t_ast	pipe = {
-		.type = CMD_PIPE,
+		.type = NODE_PIPE,
 		.left = &ls,
 		.right = &wc
 	};

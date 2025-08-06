@@ -28,6 +28,7 @@
 typedef enum e_node_type
 {
 	NODE_CMD,
+	NODE_BUILTIN,
 	NODE_PIPE,
 	NODE_AND,
 	NODE_OR,
@@ -70,6 +71,7 @@ typedef struct s_ast
 {
 	t_node_type		type;
 	t_command		*command;
+	char			*filename;
 	int				fd_in;
 	int				fd_out;
 	struct s_ast	*left;
