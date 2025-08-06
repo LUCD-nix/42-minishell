@@ -18,14 +18,13 @@
 int	close_and_redirect(int to_close, int to_redirect)
 {
 	if (close(to_close) == -1)
-		// TODO : maybe exit here
 		return (-1);
 	if (dup2(to_redirect, to_close) == -1)
 		return (-1);
 	return (0);
 }
 
-int	redirect_io(t_redir *lst)
+int	redirect_file(t_redir *lst)
 {
 	int		oflag;
 	int		fd;
@@ -64,7 +63,7 @@ int	run_process(t_ast *process)
 	int			return_value;
 	extern char	*environ[];
 
-	if (redirect_io(process->redir) == -1)
+	if (redirect_file(process->redir) == -1)
 		;// TODO: error out
 	return_value = 0;
 	pid = fork();
@@ -94,9 +93,10 @@ int	traverse(t_ast *node)
 			; // TODO: exit;
 		if (close_and_redirect(STDOUT_FILENO, pepi[PIPE_IN]) == -1 ||
 			close_and_redirect(STDIN_FILENO, pepi[PIPE_OUT]) == -1)
-			; // TODO : exit
+			return (-1);
 		traverse(node->left);
 		close(pepi[PIPE_OUT]);
+		close(STDOUT_FILENO);
 		res = traverse(node->right);
 		close(pepi[PIPE_IN]);
 		return (res);
@@ -105,7 +105,7 @@ int	traverse(t_ast *node)
 	// la premiere a termine correctement
 	else if (node->type == CMD_AND)
 	{
-		res = run_process(node->left);
+		res = traverse(node->left);
 		if (res == EXIT_FAILURE)
 			return res;
 		else
@@ -121,4 +121,25 @@ int	traverse(t_ast *node)
 		else
 			return (traverse(node->right));
 	}
+}
+
+int main(void)
+{
+	t_ast	ls = {
+		.type = CMD_SIMPLE,
+		.path = "/usr/bin/ls",
+		.args = (char *[3]) {"ls", "-la", NULL},
+	};
+	t_ast	wc = {
+		.type = CMD_SIMPLE,
+		.path = "/usr/bin/wc",
+		.args = (char *[3]) {"wc", "-l", NULL},
+	};
+	t_ast	pipe = {
+		.type = CMD_PIPE,
+		.left = &ls,
+		.right = &wc
+	};
+	traverse(&pipe);
+	return (0);
 }

@@ -25,21 +25,19 @@
 # define PIPE_IN 1
 # define CHILD_PID 0
 
-typedef enum e_cmd_type
+typedef enum e_node_type
 {
-	CMD_SIMPLE,
-	CMD_PIPE,
-	CMD_AND,
-	CMD_OR,
-}					t_cmd_type;
+	NODE_CMD,
+	NODE_PIPE,
+	NODE_AND,
+	NODE_OR,
+	NODE_IN,
+	NODE_OUT,
+	NODE_APPEND,
+	NODE_HEREDOC,
+	NODE_FILE
+}	t_node_type;
 
-typedef enum e_redir_type
-{
-	REDIR_IN,
-	REDIR_OUT,
-	REDIR_APPEND,
-	REDIR_HEREDOC
-}					t_redir_type;
 
 typedef enum e_token_type
 {
@@ -62,22 +60,21 @@ typedef struct s_token
 	struct s_token	*next;
 }					t_token;
 
-typedef struct s_redir
+typedef struct s_command
 {
-	t_redir_type	type;
-	char			*filename;
-	struct s_redir	*next;
-}					t_redir;
+	char	*path;
+	char	**args;
+}	t_command;
 
 typedef struct s_ast
 {
-	char			*path;
-	char			**args;
-	t_cmd_type		type;
-	t_redir			*redir;
+	t_node_type		type;
+	t_command		*command;
+	int				fd_in;
+	int				fd_out;
 	struct s_ast	*left;
 	struct s_ast	*right;
-}					t_ast;
+}	t_ast;
 
 /*---Debugs utils---*/
 
@@ -99,10 +96,10 @@ char *in_quote(const char *str);
 
 /*---Ast---*/
 
-t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
-t_redir				*init_redir(char *filename, t_redir_type type);
-void				free_args(char **args);
-void				free_redir(t_redir *redir);
-void				free_ast(t_ast *root);
+// t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
+// t_redir				*init_redir(char *filename, t_redir_type type);
+// void				free_args(char **args);
+// void				free_redir(t_redir *redir);
+// void				free_ast(t_ast *root);
 
 #endif
