@@ -52,62 +52,66 @@ int	run_process(t_ast *process)
 	if (pid == CHILD_PID)
 	{
 		if (process->fd_in != STDIN_FILENO
-			// && close_and_redirect_fd(STDIN_FILENO, process->fd_in) == -1)
 			&& dup2(process->fd_in, STDIN_FILENO) == -1)
-			return (-1);
+				return (-1);
 		if (process->fd_out != STDOUT_FILENO
 			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
-			return (-1);
+				return (-1);
 		execve(process->command->path, process->command->args, environ);
 	}
 	else
-	{
 		waitpid(pid, &return_value, 0);
-		if (process->fd_in != STDIN_FILENO)
-			close(process->fd_in);
-		if (process->fd_out != STDOUT_FILENO)
-			close(process->fd_out);
-	}
 	return (return_value);
+}
+
+void	pipe_propagate_fd(t_ast *pipe)
+{
+	pipe->left->fd_in = pipe->fd_in;
+	pipe->right->fd_out = pipe->fd_out;
 }
 
 int	traverse(t_ast *node)
 {
 	int		res;
 
+	res = -1;
 	if (node->type == NODE_CMD)
 	{
-		return (run_process(node));
+		res = run_process(node);
 	}
 	else if (node->type == NODE_PIPE)
 	{
+		pipe_propagate_fd(node);
 		if (create_pipe(node->left, node->right) == -1)
-			return (-1);
-		traverse(node->left);
-		return (traverse(node->right));
-	}
-	// La deuxieme commande ne s'execute que si
-	// la premiere a termine correctement
-	else if (node->type == NODE_AND)
-	{
-		res = traverse(node->left);
-		if (res != EXIT_SUCCESS)
-			return res;
+			res = -1;
 		else
-			return (traverse(node->right));
+		{
+			traverse(node->left);
+			res = traverse(node->right);
+		}
 	}
-	// La deuxieme commande ne s'execute que si
-	// la premiere a termine avec une erreur
-	else if (node->type == NODE_OR)
-	{
-		res = traverse(node->left);
-		if (res == EXIT_SUCCESS)
-			return (res);
-		else
-			return (traverse(node->right));
-	}
-	return (0);
+	if (node->fd_in != STDIN_FILENO)
+		close(node->fd_in);
+	if (node->fd_out != STDOUT_FILENO)
+		close(node->fd_out);
+	return (res);
 }
+// 	// La deuxieme commande ne s'execute que si
+// 	// la premiere a termine correctement
+// 	else if (node->type == NODE_AND)
+// 	{
+// 		res = traverse(node->left);
+// 		if (res == EXIT_SUCCESS)
+// 			res = traverse(node->right);
+// 	}
+// 	// La deuxieme commande ne s'execute que si
+// 	// la premiere a termine avec une erreur
+// 	else if (node->type == NODE_OR)
+// 	{
+// 		res = traverse(node->left);
+// 		if (res != EXIT_SUCCESS)
+// 			res = traverse(node->right);
+// 	}
 
 int main(void)
 {
@@ -129,11 +133,45 @@ int main(void)
 		.fd_out = STDOUT_FILENO,
 		.fd_in = STDIN_FILENO,
 	};
-	t_ast	pipe = {
+	t_ast	wc2 = {
+		.type = NODE_CMD,
+		.command = &(t_command) {
+			.path = "/usr/bin/wc",
+			.args = (char *[3]) {"wc", "-c", NULL},
+		},
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
+	};
+	t_ast	factor = {
+		.type = NODE_CMD,
+		.command = &(t_command) {
+			.path = "/usr/bin/factor",
+			.args = (char *[2]) {"factor", NULL},
+		},
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
+	};
+	t_ast	pipe3 = {
+		.type = NODE_PIPE,
+		.left = &factor,
+		.right = &wc2,
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
+	};
+	t_ast	pipe2 = {
+		.type = NODE_PIPE,
+		.left = &wc,
+		.right = &pipe3,
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
+	};
+	t_ast	pipe1 = {
 		.type = NODE_PIPE,
 		.left = &ls,
-		.right = &wc
+		.right = &pipe2,
+		.fd_out = STDOUT_FILENO,
+		.fd_in = STDIN_FILENO,
 	};
-	traverse(&pipe);
+	traverse(&pipe1);
 	return (0);
 }
