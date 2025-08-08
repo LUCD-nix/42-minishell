@@ -51,12 +51,16 @@ int	run_process(t_ast *process)
 		return (-1);
 	if (pid == CHILD_PID)
 	{
-		if (process->fd_in != STDIN_FILENO
-			&& dup2(process->fd_in, STDIN_FILENO) == -1)
+		if (process->fd_in != STDIN_FILENO)
+		{
+			if (dup2(process->fd_in, STDIN_FILENO) == -1)
 				return (-1);
-		if (process->fd_out != STDOUT_FILENO
-			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
+		}
+		if (process->fd_out != STDOUT_FILENO)
+		{
+			if (dup2(process->fd_out, STDOUT_FILENO) == -1)
 				return (-1);
+		}
 		execve(process->command->path, process->command->args, environ);
 	}
 	else
@@ -64,10 +68,18 @@ int	run_process(t_ast *process)
 	return (return_value);
 }
 
-void	pipe_propagate_fd(t_ast *pipe)
+void	pipe_propagate_fd(t_ast *node)
 {
-	pipe->left->fd_in = pipe->fd_in;
-	pipe->right->fd_out = pipe->fd_out;
+	node->left->fd_in = node->fd_in;
+	node->right->fd_out = node->fd_out;
+}
+
+void	andor_propagate_fd(t_ast *node)
+{
+	node->left->fd_in = node->fd_in;
+	node->left->fd_out = node->fd_out;
+	node->right->fd_in = node->fd_in;
+	node->right->fd_out = node->fd_out;
 }
 
 int	traverse(t_ast *node)
@@ -87,60 +99,56 @@ int	traverse(t_ast *node)
 		else
 		{
 			traverse(node->left);
+			if (close(node->left->fd_out) == -1)
+				return (-1);
 			res = traverse(node->right);
+			if (close(node->right->fd_in) == -1)
+				return (-1);
 		}
 	}
-	if (node->fd_in != STDIN_FILENO)
-		close(node->fd_in);
-	if (node->fd_out != STDOUT_FILENO)
-		close(node->fd_out);
+	// La deuxieme commande ne s'execute que si
+	// la premiere a termine correctement
+	else if (node->type == NODE_AND)
+	{
+		andor_propagate_fd(node);
+		res = traverse(node->left);
+		if (res == EXIT_SUCCESS)
+			res = traverse(node->right);
+	}
+	// La deuxieme commande ne s'execute que si
+	// la premiere a termine avec une erreur
+	else if (node->type == NODE_OR)
+	{
+		andor_propagate_fd(node);
+		res = traverse(node->left);
+		if (res != EXIT_SUCCESS)
+			res = traverse(node->right);
+	}
 	return (res);
 }
-// 	// La deuxieme commande ne s'execute que si
-// 	// la premiere a termine correctement
-// 	else if (node->type == NODE_AND)
-// 	{
-// 		res = traverse(node->left);
-// 		if (res == EXIT_SUCCESS)
-// 			res = traverse(node->right);
-// 	}
-// 	// La deuxieme commande ne s'execute que si
-// 	// la premiere a termine avec une erreur
-// 	else if (node->type == NODE_OR)
-// 	{
-// 		res = traverse(node->left);
-// 		if (res != EXIT_SUCCESS)
-// 			res = traverse(node->right);
-// 	}
 
 int main(void)
 {
-	t_ast	ls = {
+	t_ast	cat = {
 		.type = NODE_CMD,
 		.command = &(t_command) {
-			.path = "/usr/bin/ls",
-			.args = (char *[3]) {"ls", "-la", NULL},
+			.path = "/usr/bin/cat",
+			.args = (char *[3]) {"cat", "test.txt", NULL},
 		},
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
 	};
-	t_ast	wc = {
+	t_ast	wcl = {
 		.type = NODE_CMD,
 		.command = &(t_command) {
 			.path = "/usr/bin/wc",
 			.args = (char *[3]) {"wc", "-l", NULL},
 		},
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
 	};
-	t_ast	wc2 = {
+	t_ast	wcc = {
 		.type = NODE_CMD,
 		.command = &(t_command) {
 			.path = "/usr/bin/wc",
 			.args = (char *[3]) {"wc", "-c", NULL},
 		},
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
 	};
 	t_ast	factor = {
 		.type = NODE_CMD,
@@ -148,27 +156,26 @@ int main(void)
 			.path = "/usr/bin/factor",
 			.args = (char *[2]) {"factor", NULL},
 		},
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
 	};
 	t_ast	pipe3 = {
 		.type = NODE_PIPE,
-		.left = &factor,
-		.right = &wc2,
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
+		.left = &cat,
+		.right = &wcc,
 	};
 	t_ast	pipe2 = {
 		.type = NODE_PIPE,
-		.left = &wc,
+		.left = &cat,
+		.right = &wcl,
+	};
+	t_ast	and = {
+		.type = NODE_AND,
+		.left = &pipe2,
 		.right = &pipe3,
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
 	};
 	t_ast	pipe1 = {
 		.type = NODE_PIPE,
-		.left = &ls,
-		.right = &pipe2,
+		.left = &and,
+		.right = &factor,
 		.fd_out = STDOUT_FILENO,
 		.fd_in = STDIN_FILENO,
 	};
