@@ -90,7 +90,7 @@ int	file_to_pipe(char *file)
 	}
 	if (close(file_fd) == -1 || close(pipe_fd[PIPE_IN]) == -1)
 		return (-1);
-	return (0);
+	return (pipe_fd[PIPE_OUT]);
 }
 
 int	traverse(t_ast *node)
@@ -118,6 +118,7 @@ int	traverse(t_ast *node)
 	// TODO : untested
 	else if (node->type == NODE_IN)
 	{
+		andor_propagate_fd(node);
 		file_fd = file_to_pipe(node->right->filename);
 		if (file_fd == -1)
 			return (-1);
@@ -165,13 +166,13 @@ int	traverse(t_ast *node)
 
 int main(void)
 {
-	t_ast	cat = {
-		.type = NODE_CMD,
-		.command = &(t_command) {
-			.path = "/usr/bin/cat",
-			.args = (char *[3]) {"cat", "test.txt", NULL},
-		},
-	};
+	// t_ast	cat = {
+	// 	.type = NODE_CMD,
+	// 	.command = &(t_command) {
+	// 		.path = "/usr/bin/cat",
+	// 		.args = (char *[3]) {"cat", "test.txt", NULL},
+	// 	},
+	// };
 	t_ast	wcl = {
 		.type = NODE_CMD,
 		.command = &(t_command) {
@@ -179,51 +180,63 @@ int main(void)
 			.args = (char *[3]) {"wc", "-l", NULL},
 		},
 	};
-	t_ast	wcc = {
-		.type = NODE_CMD,
-		.command = &(t_command) {
-			.path = "/usr/bin/wc",
-			.args = (char *[3]) {"wc", "-c", NULL},
-		},
-	};
-	t_ast	factor = {
-		.type = NODE_CMD,
-		.command = &(t_command) {
-			.path = "/usr/bin/factor",
-			.args = (char *[2]) {"factor", NULL},
-		},
-	};
-	t_ast	pipe3 = {
-		.type = NODE_PIPE,
-		.left = &cat,
-		.right = &wcc,
-	};
-	t_ast	pipe2 = {
-		.type = NODE_PIPE,
-		.left = &cat,
-		.right = &wcl,
-	};
-	t_ast	and = {
-		.type = NODE_AND,
-		.left = &pipe2,
-		.right = &pipe3,
-	};
-	t_ast	pipe1 = {
-		.type = NODE_PIPE,
-		.left = &and,
-		.right = &factor,
-		.fd_out = STDOUT_FILENO,
-		.fd_in = STDIN_FILENO,
-	};
-	t_ast	outfile = {
+	// t_ast	wcc = {
+	// 	.type = NODE_CMD,
+	// 	.command = &(t_command) {
+	// 		.path = "/usr/bin/wc",
+	// 		.args = (char *[3]) {"wc", "-c", NULL},
+	// 	},
+	// };
+	// t_ast	factor = {
+	// 	.type = NODE_CMD,
+	// 	.command = &(t_command) {
+	// 		.path = "/usr/bin/factor",
+	// 		.args = (char *[2]) {"factor", NULL},
+	// 	},
+	// };
+	// t_ast	pipe3 = {
+	// 	.type = NODE_PIPE,
+	// 	.left = &cat,
+	// 	.right = &wcc,
+	// };
+	// t_ast	pipe2 = {
+	// 	.type = NODE_PIPE,
+	// 	.left = &cat,
+	// 	.right = &wcl,
+	// };
+	// t_ast	and = {
+	// 	.type = NODE_AND,
+	// 	.left = &pipe2,
+	// 	.right = &pipe3,
+	// };
+	// t_ast	pipe1 = {
+	// 	.type = NODE_PIPE,
+	// 	.left = &and,
+	// 	.right = &factor,
+	// 	.fd_out = STDOUT_FILENO,
+	// 	.fd_in = STDIN_FILENO,
+	// };
+	// t_ast	outfile = {
+	// 	.type = NODE_FILE,
+	// 	.filename = "test_output.txt",
+	// };
+	// t_ast	redirect_append = {
+	// 	.type = NODE_APPEND,
+	// 	.left = &pipe1,
+	// 	.right = &outfile,
+	// };
+	// traverse(&redirect_append);
+	t_ast	in_file = {
 		.type = NODE_FILE,
-		.filename = "test_output.txt",
+		.filename = "test.txt",
 	};
-	t_ast	redirect_append = {
-		.type = NODE_APPEND,
-		.left = &pipe1,
-		.right = &outfile,
+	t_ast	redir_in = {
+		.type = NODE_IN,
+		.left = &wcl,
+		.right = &in_file,
+		.fd_in = 0,
+		.fd_out = 1,
 	};
-	traverse(&redirect_append);
+	traverse(&redir_in);
 	return (0);
 }
