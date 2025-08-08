@@ -10,13 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../minishell.h"
-#include <readline/readline.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 // TODO : replace all the return (-1) with appropriate error functions
-//
 int	create_pipe(t_ast *writer, t_ast *reader)
 {
 	int	pipe_fd[2];
@@ -29,15 +24,6 @@ int	create_pipe(t_ast *writer, t_ast *reader)
 	reader->fd_in = pipe_fd[PIPE_OUT];
 	return (0);
 }
-
-// int	close_and_redirect_fd(int to_close, int to_redirect)
-// {
-// 	if (close(to_close) == -1)
-// 		return (-1);
-// 	if (dup2(to_close, to_redirect) == -1)
-// 		return (-1);
-// 	return(0);
-// }
 
 int	run_process(t_ast *process)
 {
@@ -82,9 +68,35 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
+int	file_to_pipe(char *file)
+{
+	int		file_fd;
+	int		pipe_fd[2];
+	char	*line;
+
+	file_fd = open(file, O_RDONLY);
+	if (file_fd == -1)
+		return (-1);
+	if (pipe(pipe_fd) == -1)
+		return (-1);
+	while (1)
+	{
+		line = get_next_line(file_fd);
+		if (line == NULL)
+			break ;
+		if (write(pipe_fd[PIPE_IN], line, ft_strlen(line)) == -1)
+			return (-1);
+		free(line);
+	}
+	if (close(file_fd) == -1 || close(pipe_fd[PIPE_IN]) == -1)
+		return (-1);
+	return (0);
+}
+
 int	traverse(t_ast *node)
 {
 	int		res;
+	int		file_fd;
 
 	res = -1;
 	if (node->type == NODE_CMD)
@@ -95,19 +107,44 @@ int	traverse(t_ast *node)
 	{
 		pipe_propagate_fd(node);
 		if (create_pipe(node->left, node->right) == -1)
-			res = -1;
-		else
-		{
-			traverse(node->left);
-			if (close(node->left->fd_out) == -1)
-				return (-1);
-			res = traverse(node->right);
-			if (close(node->right->fd_in) == -1)
-				return (-1);
-		}
+			return (-1);
+		traverse(node->left);
+		if (close(node->left->fd_out) == -1)
+			return (-1);
+		res = traverse(node->right);
+		if (close(node->right->fd_in) == -1)
+			return (-1);
 	}
-	// La deuxieme commande ne s'execute que si
-	// la premiere a termine correctement
+	// TODO : untested
+	else if (node->type == NODE_IN)
+	{
+		file_fd = file_to_pipe(node->right->filename);
+		if (file_fd == -1)
+			return (-1);
+		node->left->fd_in = file_fd;
+		res = traverse(node->left);
+		close(file_fd);
+	}
+	else if (node->type == NODE_OUT)
+	{
+		file_fd = open(node->right->filename,
+			 O_WRONLY | O_TRUNC | O_CREAT, 0644);
+		if (file_fd == -1)
+			return (-1);
+		node->left->fd_out = file_fd;
+		res = traverse(node->left);
+		close(file_fd);
+	}
+	else if (node->type == NODE_APPEND)
+	{
+		file_fd = open(node->right->filename,
+			 O_WRONLY | O_APPEND | O_CREAT, 0644);
+		if (file_fd == -1)
+			return (-1);
+		node->left->fd_out = file_fd;
+		res = traverse(node->left);
+		close(file_fd);
+	}
 	else if (node->type == NODE_AND)
 	{
 		andor_propagate_fd(node);
@@ -115,8 +152,7 @@ int	traverse(t_ast *node)
 		if (res == EXIT_SUCCESS)
 			res = traverse(node->right);
 	}
-	// La deuxieme commande ne s'execute que si
-	// la premiere a termine avec une erreur
+	// TODO : untested
 	else if (node->type == NODE_OR)
 	{
 		andor_propagate_fd(node);
@@ -179,6 +215,15 @@ int main(void)
 		.fd_out = STDOUT_FILENO,
 		.fd_in = STDIN_FILENO,
 	};
-	traverse(&pipe1);
+	t_ast	outfile = {
+		.type = NODE_FILE,
+		.filename = "test_output.txt",
+	};
+	t_ast	redirect_append = {
+		.type = NODE_APPEND,
+		.left = &pipe1,
+		.right = &outfile,
+	};
+	traverse(&redirect_append);
 	return (0);
 }
