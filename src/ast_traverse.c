@@ -60,6 +60,8 @@ void	pipe_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
+// TODO: (a | b && a | c) < file does not propagate file to second "a"
+// in BASH, and it does here, needs more testing
 void	andor_propagate_fd(t_ast *node)
 {
 	node->left->fd_in = node->fd_in;
@@ -93,6 +95,56 @@ int	file_to_pipe(char *file)
 	return (pipe_fd[PIPE_OUT]);
 }
 
+int	redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
+{
+	if (node->fd_in != STDIN_FILENO)
+	{
+		*saved_in = dup(STDIN_FILENO);
+		if (*saved_in == -1 || dup2(node->fd_in, STDIN_FILENO) == -1)
+			return (-1);
+	}
+	if (node->fd_out != STDOUT_FILENO)
+	{
+		*saved_out = dup(STDOUT_FILENO);
+		if (*saved_out == -1 || dup2(node->fd_out, STDOUT_FILENO) == -1)
+			return (-1);
+	}
+	return (0);
+}
+int	exec_builtin(t_ast *node)
+{
+	int argc;
+
+	argc = 0;
+	while (node->command->args[argc] != NULL)
+		argc++;
+	if (!ft_strncmp(node->command->path, "echo", 5))
+		return (builtin)
+}
+int	handle_builtin(t_ast *node)
+{
+	int	saved_in;
+	int	saved_out;
+	int	res;
+
+	saved_in = 0;
+	saved_out = 0;
+	if (redirect_builtin(node, &saved_in, &saved_out) == -1)
+		return (-1);
+	res = exec_builtin(node);
+	if (node->fd_in != STDIN_FILENO)
+	{
+		if (close(node->fd_in) == -1 || dup2(saved_in, STDIN_FILENO) == -1)
+			return (-1);
+	}
+	if (node->fd_out != STDOUT_FILENO)
+	{
+		if (close(node->fd_out) == -1 || dup2(saved_out, STDOUT_FILENO) == -1)
+			return (-1);
+	}
+	return (res);
+}
+
 int	traverse(t_ast *node)
 {
 	int		res;
@@ -115,7 +167,6 @@ int	traverse(t_ast *node)
 		if (close(node->right->fd_in) == -1)
 			return (-1);
 	}
-	// TODO : untested
 	else if (node->type == NODE_IN)
 	{
 		andor_propagate_fd(node);
