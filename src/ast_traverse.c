@@ -74,23 +74,15 @@ int	file_to_pipe(char *file)
 {
 	int		file_fd;
 	int		pipe_fd[2];
-	char	*line;
 
 	file_fd = open(file, O_RDONLY);
 	if (file_fd == -1)
 		return (-1);
 	if (pipe(pipe_fd) == -1)
 		return (-1);
-	while (1)
-	{
-		line = get_next_line(file_fd);
-		if (line == NULL)
-			break ;
-		if (write(pipe_fd[PIPE_IN], line, ft_strlen(line)) == -1)
-			return (-1);
-		free(line);
-	}
-	if (close(file_fd) == -1 || close(pipe_fd[PIPE_IN]) == -1)
+	if (dup2(file_fd, pipe_fd[PIPE_OUT]) == -1)
+		return (-1);
+	if (close(pipe_fd[PIPE_IN]) == -1)
 		return (-1);
 	return (pipe_fd[PIPE_OUT]);
 }
