@@ -60,7 +60,7 @@ void	pipe_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
-// TODO: (a | b && a | c) < file does not propagate file to second "a"
+// TODO: (a | b && c | d) < file does not propagate file to "c"
 // in BASH, and it does here, needs more testing
 void	andor_propagate_fd(t_ast *node)
 {
@@ -113,14 +113,31 @@ int	redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 }
 int	exec_builtin(t_ast *node)
 {
-	int argc;
+	int 	argc;
+	char	**argv;
 
 	argc = 0;
-	while (node->command->args[argc] != NULL)
+	argv = node->command->args;
+	while (argv[argc] != NULL)
 		argc++;
-	if (!ft_strncmp(node->command->path, "echo", 5))
-		return (builtin)
+	if (!ft_memcmp(node->command->path, "echo", 5))
+		return (builtin_echo(argc, argv));
+	if (!ft_memcmp(node->command->path, "cd", 3))
+		return(builtin_cd(argc, argv));
+	if (!ft_memcmp(node->command->path, "pwd", 4))
+		return(builtin_pwd(argc, argv));
+	if (!ft_memcmp(node->command->path, "export", 7))
+		return(builtin_export(argc, argv));
+	if (!ft_memcmp(node->command->path, "unset", 6))
+		return(builtin_unset(argc, argv));
+	if (!ft_memcmp(node->command->path, "env", 4))
+		return(builtin_env(argc, argv));
+	if (!ft_memcmp(node->command->path, "exit", 5))
+		return(builtin_exit(argc, argv));
+	// Unreachable
+	return (-1);
 }
+
 int	handle_builtin(t_ast *node)
 {
 	int	saved_in;
