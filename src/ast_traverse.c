@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../minishell.h"
+#include <unistd.h>
 
 // TODO : replace all the return (-1) with appropriate error functions
 int	create_pipe(t_ast *writer, t_ast *reader)
@@ -103,6 +104,7 @@ int	redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 	}
 	return (0);
 }
+
 int	exec_builtin(t_ast *node)
 {
 	int 	argc;
@@ -114,18 +116,18 @@ int	exec_builtin(t_ast *node)
 		argc++;
 	if (!ft_memcmp(node->command->path, "echo", 5))
 		return (builtin_echo(argc, argv));
-	if (!ft_memcmp(node->command->path, "cd", 3))
-		return(builtin_cd(argc, argv));
+	// if (!ft_memcmp(node->command->path, "cd", 3))
+	// 	return(builtin_cd(argc, argv));
 	if (!ft_memcmp(node->command->path, "pwd", 4))
 		return(builtin_pwd(argc, argv));
-	if (!ft_memcmp(node->command->path, "export", 7))
-		return(builtin_export(argc, argv));
-	if (!ft_memcmp(node->command->path, "unset", 6))
-		return(builtin_unset(argc, argv));
+	// if (!ft_memcmp(node->command->path, "export", 7))
+	// 	return(builtin_export(argc, argv));
+	// if (!ft_memcmp(node->command->path, "unset", 6))
+	// 	return(builtin_unset(argc, argv));
 	if (!ft_memcmp(node->command->path, "env", 4))
 		return(builtin_env(argc, argv));
-	if (!ft_memcmp(node->command->path, "exit", 5))
-		return(builtin_exit(argc, argv));
+	// if (!ft_memcmp(node->command->path, "exit", 5))
+	// 	return(builtin_exit(argc, argv));
 	// Unreachable
 	return (-1);
 }
@@ -143,12 +145,12 @@ int	handle_builtin(t_ast *node)
 	res = exec_builtin(node);
 	if (node->fd_in != STDIN_FILENO)
 	{
-		if (close(node->fd_in) == -1 || dup2(saved_in, STDIN_FILENO) == -1)
+		if (dup2(saved_in, STDIN_FILENO) == -1)
 			return (-1);
 	}
 	if (node->fd_out != STDOUT_FILENO)
 	{
-		if (close(node->fd_out) == -1 || dup2(saved_out, STDOUT_FILENO) == -1)
+		if (dup2(saved_out, STDOUT_FILENO) == -1)
 			return (-1);
 	}
 	return (res);
@@ -161,9 +163,9 @@ int	traverse(t_ast *node)
 
 	res = -1;
 	if (node->type == NODE_CMD)
-	{
 		res = run_process(node);
-	}
+	else if (node->type == NODE_BUILTIN)
+		res = handle_builtin(node);
 	else if (node->type == NODE_PIPE)
 	{
 		pipe_propagate_fd(node);
@@ -226,77 +228,30 @@ int	traverse(t_ast *node)
 
 int main(void)
 {
-	// t_ast	cat = {
-	// 	.type = NODE_CMD,
-	// 	.command = &(t_command) {
-	// 		.path = "/usr/bin/cat",
-	// 		.args = (char *[3]) {"cat", "test.txt", NULL},
-	// 	},
-	// };
-	t_ast	wcl = {
+	t_ast	wcc = {
 		.type = NODE_CMD,
 		.command = &(t_command) {
 			.path = "/usr/bin/wc",
-			.args = (char *[3]) {"wc", "-l", NULL},
+			.args = (char *[3]) {"wc", "-c", NULL},
 		},
+		.fd_in = STDIN_FILENO,
+		.fd_out = STDOUT_FILENO,
 	};
-	// t_ast	wcc = {
-	// 	.type = NODE_CMD,
-	// 	.command = &(t_command) {
-	// 		.path = "/usr/bin/wc",
-	// 		.args = (char *[3]) {"wc", "-c", NULL},
-	// 	},
-	// };
-	// t_ast	factor = {
-	// 	.type = NODE_CMD,
-	// 	.command = &(t_command) {
-	// 		.path = "/usr/bin/factor",
-	// 		.args = (char *[2]) {"factor", NULL},
-	// 	},
-	// };
-	// t_ast	pipe3 = {
-	// 	.type = NODE_PIPE,
-	// 	.left = &cat,
-	// 	.right = &wcc,
-	// };
-	// t_ast	pipe2 = {
-	// 	.type = NODE_PIPE,
-	// 	.left = &cat,
-	// 	.right = &wcl,
-	// };
-	// t_ast	and = {
-	// 	.type = NODE_AND,
-	// 	.left = &pipe2,
-	// 	.right = &pipe3,
-	// };
-	// t_ast	pipe1 = {
-	// 	.type = NODE_PIPE,
-	// 	.left = &and,
-	// 	.right = &factor,
-	// 	.fd_out = STDOUT_FILENO,
-	// 	.fd_in = STDIN_FILENO,
-	// };
-	// t_ast	outfile = {
-	// 	.type = NODE_FILE,
-	// 	.filename = "test_output.txt",
-	// };
-	// t_ast	redirect_append = {
-	// 	.type = NODE_APPEND,
-	// 	.left = &pipe1,
-	// 	.right = &outfile,
-	// };
-	// traverse(&redirect_append);
-	t_ast	in_file = {
-		.type = NODE_FILE,
-		.filename = "test.txt",
+	t_ast	echo = {
+		.type = NODE_BUILTIN,
+		.command = &(t_command) {
+			.path = "echo",
+			.args = (char *[5]) {"echo", "asdfas", "asdfasdf", "asdf asdf asfd", NULL}
+		},
+		.fd_in = STDIN_FILENO,
+		.fd_out = STDOUT_FILENO,
 	};
-	t_ast	redir_in = {
-		.type = NODE_IN,
-		.left = &wcl,
-		.right = &in_file,
-		.fd_in = 0,
-		.fd_out = 1,
+	t_ast	pipe = {
+		.type = NODE_PIPE,
+		.left = &echo,
+		.right = &wcc,
+		.fd_in = STDIN_FILENO,
+		.fd_out = STDOUT_FILENO,
 	};
-	traverse(&redir_in);
-	return (0);
+	return (traverse(&pipe));
 }

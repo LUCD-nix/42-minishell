@@ -20,7 +20,7 @@ int	builtin_echo(int argc, char **argv)
 
 	if (argc == 1)
 	{
-		if (printf("\n") < 0)
+		if (ft_printf("\n") < 0)
 			return (-1);
 		return (0);
 	}
@@ -30,13 +30,13 @@ int	builtin_echo(int argc, char **argv)
 		i++;
 	while (i < argc)
 	{
-		if (printf("%s", argv[i]) < 0)
+		if (ft_printf("%s", argv[i]) < 0)
 			return (-1);
 		i++;
 	}
 	if (write_new_line)
 	{
-		if (printf("\n") < 0)
+		if (ft_printf("\n") < 0)
 			return (-1);
 	}
 	return (0);
@@ -49,9 +49,10 @@ int	builtin_pwd(int argc, char **argv)
 {
 	char	*cwd_buffer;
 
+	(void) argv;
 	if (argc != 1)
 	{
-		printf("pwd : too many arguments\n");
+		ft_printf("pwd : too many arguments\n");
 		return (1);
 	}
 	cwd_buffer = NULL;
@@ -65,7 +66,7 @@ int	builtin_pwd(int argc, char **argv)
 		free(cwd_buffer);
 		return (-1);
 	}
-	if (printf("%s\n", cwd_buffer) < 0)
+	if (ft_printf("%s\n", cwd_buffer) < 0)
 	{
 		free(cwd_buffer);
 		return (-1);
@@ -74,19 +75,20 @@ int	builtin_pwd(int argc, char **argv)
 	return (0);
 }
 
-int	env(int argc, char **argv)
+int	builtin_env(int argc, char **argv)
 {
 	extern char **environ;
 	int			i = 0;
 
+	(void) argv;
 	if (argc != 1)
 	{
-		printf("env : No arguments or flags supported!\n");
+		ft_printf("env : No arguments or flags supported!\n");
 		return (1);
 	}
 	while (environ[i] != NULL)
 	{
-		if (printf("%s\n", environ[i]) < 0)
+		if (ft_printf("%s\n", environ[i]) < 0)
 			return (-1);
 		i++;
 	}
