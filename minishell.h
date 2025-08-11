@@ -24,6 +24,7 @@
 # define PIPE_OUT 0
 # define PIPE_IN 1
 # define CHILD_PID 0
+# define PATH_MAX 4096
 
 typedef enum e_node_type
 {

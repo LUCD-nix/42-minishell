@@ -30,7 +30,7 @@ int	run_process(t_ast *process)
 {
 	pid_t		pid;
 	int			return_value;
-	extern char	*environ[];
+	extern char	**environ;
 
 	return_value = -1;
 	pid = fork();
