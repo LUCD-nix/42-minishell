@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 #include "../minishell.h"
 #include <unistd.h>
+<<<<<<< HEAD
 
 // TODO : replace all the return (-1) with appropriate error functions
 int	create_pipe(t_ast *writer, t_ast *reader)
@@ -226,32 +227,32 @@ int	traverse(t_ast *node)
 	return (res);
 }
 
-int main(void)
-{
-	t_ast	wcc = {
-		.type = NODE_CMD,
-		.command = &(t_command) {
-			.path = "/usr/bin/wc",
-			.args = (char *[3]) {"wc", "-c", NULL},
-		},
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-	};
-	t_ast	echo = {
-		.type = NODE_BUILTIN,
-		.command = &(t_command) {
-			.path = "echo",
-			.args = (char *[5]) {"echo", "asdfas", "asdfasdf", "asdf asdf asfd", NULL}
-		},
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-	};
-	t_ast	pipe = {
-		.type = NODE_PIPE,
-		.left = &echo,
-		.right = &wcc,
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-	};
-	return (traverse(&pipe));
-}
+// int main(void)
+// {
+// 	t_ast	wcc = {
+// 		.type = NODE_CMD,
+// 		.command = &(t_command) {
+// 			.path = "/usr/bin/wc",
+// 			.args = (char *[3]) {"wc", "-c", NULL},
+// 		},
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 	};
+// 	t_ast	echo = {
+// 		.type = NODE_BUILTIN,
+// 		.command = &(t_command) {
+// 			.path = "echo",
+// 			.args = (char *[5]) {"echo", "asdfas", "asdfasdf", "asdf asdf asfd", NULL}
+// 		},
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 	};
+// 	t_ast	pipe = {
+// 		.type = NODE_PIPE,
+// 		.left = &echo,
+// 		.right = &wcc,
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 	};
+// 	return (traverse(&pipe));
+// }

@@ -52,7 +52,8 @@ typedef enum e_token_type
 	T_APPEND,
 	T_HEREDOC,
 	T_LPAREN,
-	T_RPAREN
+	T_RPAREN,
+	T_QUOTE
 }					t_token_type;
 
 typedef struct s_token
@@ -87,15 +88,27 @@ void				print_token(t_token *token);
 
 t_token				*init_token(char *value, t_token_type type);
 void				free_token(t_token *token);
-t_token_type		get_token_type(const char *str);
+void				add_token(t_token **token, char *value, t_token_type type);
+int					is_operator_char(char c);
+int					is_operator_len(const char *s);
+char				*parse_quote(const char *s, int *i);
 int					ft_isspace(char c);
+char				*parse_word(const char *s, int *i);
+t_token_type		parse_token_type(const char *op);
+t_token				*tokenize(const char *line);
+char				*parse_operator(const char *s, int *i);
 
-/*---Lexer---*/
+/*---Init structure---*/
 
-int is_operator_sign(char c);
-int is_separator(const char *s);
-void add_token(char **tokens, int *count, char *token);
-char *in_quote(const char *str);
+t_command 			*init_command(char *path, char **args);
+t_ast 				*init_ast(t_node_type type, t_command *cmd, int fd_in, int fd_out);
+void 				free_args(char **args);
+void				free_cmd(t_command *cmd);
+void				free_ast(t_ast *ast);
+
+
+/*---Tokens to cmd---*/
+
 
 /*---Built-ins---*/
 int					builtin_echo(int argc,  char **argv);
@@ -106,11 +119,4 @@ int					builtin_unset(int argc,  char **argv);
 int					builtin_env(int argc,  char **argv);
 int					builtin_exit(int argc,  char **argv);
 
-/*---Ast---*/
-// t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
-// t_redir				*init_redir(char *filename, t_redir_type type);
-// void				free_args(char **args);
-// void				free_redir(t_redir *redir);
-// void				free_ast(t_ast *root);
-
-#endif
+#endif // MINISHELL_H
