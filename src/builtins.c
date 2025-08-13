@@ -42,6 +42,50 @@ int	builtin_echo(int argc, char **argv)
 	return (0);
 }
 
+static int	get_home_dir(char	*buf)
+{
+	char	*cwd;
+	int		i;
+
+	// TODO : test in sgoinfre due to symlinks
+	cwd = getcwd(NULL, 0);
+	if (ft_strncmp("/home/", cwd, 6) != 0)
+	{
+		free(cwd);
+		return (1);
+	}
+	ft_memcpy(buf, "/home/", 6);
+	i = 0;
+	while (cwd[6 + i] && cwd[6 + i] != '/')
+	{
+		buf[6 + i] = cwd[6 + i];
+		i++;
+	}
+	buf[6 + i] = '/';
+	free(cwd);
+	return (0);
+}
+
+int	builtin_cd(int argc, char **argv)
+{
+	static char	home[PATH_MAX] = { 0 };
+
+	if (!*home)
+	{
+		if (get_home_dir(home) == 1)
+			return (-1);
+	}
+	if (argc >= 2)
+	{
+		perror("cd : Too many arguments");
+		return (-1);
+	}
+	if (argc == 1)
+		return (chdir(home));
+	else
+		return (chdir(argv[1]));
+}
+
 // PATH_MAX is 4096 according to getconf PATH_MAX,
 // maybe get it from env right here instead of
 // harcoding it
