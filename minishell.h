@@ -106,6 +106,14 @@ void 				free_args(char **args);
 void				free_cmd(t_command *cmd);
 void				free_ast(t_ast *ast);
 
+/*---Builtins---*/
+
+int					is_builtins(t_token *token);
+char				*builtins_path(int builtins);
+int					builtins_size(t_token *token);
+char				**builtins_args(t_token *token);
+int					fill_args_from_tokens(t_token *token, char **args, int start);
+t_command			*token_to_builtin_cmd(t_token *token);
 
 /*---Tokens to cmd---*/
 
