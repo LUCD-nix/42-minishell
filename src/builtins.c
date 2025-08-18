@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../minishell.h"
+#include <linux/limits.h>
 //
 // TODO : might want to change return values in all these functions
 //
@@ -44,25 +45,14 @@ int	builtin_echo(int argc, char **argv)
 
 static int	get_home_dir(char	*buf)
 {
-	char	*cwd;
-	int		i;
+	char *res;
 
-	// TODO : test in sgoinfre due to symlinks
-	cwd = getcwd(NULL, 0);
-	if (ft_strncmp("/home/", cwd, 6) != 0)
+	res = getenv("HOME");
+	if (res == NULL)
 	{
-		free(cwd);
 		return (1);
 	}
-	ft_memcpy(buf, "/home/", 6);
-	i = 0;
-	while (cwd[6 + i] && cwd[6 + i] != '/')
-	{
-		buf[6 + i] = cwd[6 + i];
-		i++;
-	}
-	buf[6 + i] = '/';
-	free(cwd);
+	ft_strlcpy(buf, res, PATH_MAX);
 	return (0);
 }
 
@@ -75,9 +65,10 @@ int	builtin_cd(int argc, char **argv)
 		if (get_home_dir(home) == 1)
 			return (-1);
 	}
-	if (argc >= 2)
+	if (argc > 2)
 	{
-		perror("cd : Too many arguments");
+		// TODO : implement print to stderror
+		ft_printf("cd : Too many arguments");
 		return (-1);
 	}
 	if (argc == 1)
@@ -91,7 +82,7 @@ int	builtin_cd(int argc, char **argv)
 // harcoding it
 int	builtin_pwd(int argc, char **argv)
 {
-	char	*cwd_buffer;
+	char	cwd_buffer[PATH_MAX];
 
 	(void) argv;
 	if (argc != 1)
@@ -99,29 +90,19 @@ int	builtin_pwd(int argc, char **argv)
 		ft_printf("pwd : too many arguments\n");
 		return (1);
 	}
-	cwd_buffer = NULL;
-	cwd_buffer = ft_calloc(PATH_MAX, sizeof *cwd_buffer);
-	if (cwd_buffer == NULL)
-	{
-		return (-1);
-	}
 	if (getcwd(cwd_buffer, PATH_MAX) == NULL)
 	{
-		free(cwd_buffer);
 		return (-1);
 	}
 	if (ft_printf("%s\n", cwd_buffer) < 0)
 	{
-		free(cwd_buffer);
 		return (-1);
 	}
-	free(cwd_buffer);
 	return (0);
 }
-
 int	builtin_env(int argc, char **argv)
 {
-	extern char **environ;
+	extern char **to_copy;
 	int			i = 0;
 
 	(void) argv;
@@ -130,9 +111,9 @@ int	builtin_env(int argc, char **argv)
 		ft_printf("env : No arguments or flags supported!\n");
 		return (1);
 	}
-	while (environ[i] != NULL)
+	while (to_copy[i] != NULL)
 	{
-		if (ft_printf("%s\n", environ[i]) < 0)
+		if (ft_printf("%s\n", to_copy[i]) < 0)
 			return (-1);
 		i++;
 	}

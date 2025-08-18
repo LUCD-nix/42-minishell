@@ -30,7 +30,7 @@ int	run_process(t_ast *process)
 {
 	pid_t		pid;
 	int			return_value;
-	extern char	**environ;
+	extern char	**to_copy;
 
 	return_value = -1;
 	pid = fork();
@@ -48,7 +48,7 @@ int	run_process(t_ast *process)
 			if (dup2(process->fd_out, STDOUT_FILENO) == -1)
 				return (-1);
 		}
-		execve(process->command->path, process->command->args, environ);
+		execve(process->command->path, process->command->args, to_copy);
 	}
 	else
 		waitpid(pid, &return_value, 0);
@@ -122,14 +122,14 @@ int	exec_builtin(t_ast *node)
 		return(builtin_cd(argc, argv));
 	if (!ft_memcmp(path, "pwd", 4))
 		return(builtin_pwd(argc, argv));
-	if (!ft_memcmp(path, "export", 7))
-		return(builtin_export(argc, argv));
-	if (!ft_memcmp(path, "unset", 6))
-		return(builtin_unset(argc, argv));
+	// if (!ft_memcmp(path, "export", 7))
+	// 	return(builtin_export(argc, argv));
+	// if (!ft_memcmp(path, "unset", 6))
+	// 	return(builtin_unset(argc, argv));
 	if (!ft_memcmp(path, "env", 4))
 		return(builtin_env(argc, argv));
-	if (!ft_memcmp(path, "exit", 5))
-		return(builtin_exit(argc, argv));
+	// if (!ft_memcmp(path, "exit", 5))
+	// 	return(builtin_exit(argc, argv));
 	//Unreachable
 	return (-1);
 }
@@ -239,21 +239,37 @@ int main(void)
 		.fd_in = STDIN_FILENO,
 		.fd_out = STDOUT_FILENO,
 	};
-	t_ast	echo = {
+	t_ast	lsla = {
+		.type = NODE_CMD,
+		.command = &(t_command) {
+			.path = "/usr/bin/ls",
+			.args = (char *[3]) {"ls", "-la", NULL}
+		},
+		.fd_in = STDIN_FILENO,
+		.fd_out = STDOUT_FILENO,
+	};
+	t_ast	cd = {
 		.type = NODE_BUILTIN,
 		.command = &(t_command) {
-			.path = "echo",
-			.args = (char *[5]) {"echo", "asdfas", "asdfasdf", "asdf asdf asfd", NULL}
+			.path = "cd",
+			.args = (char *[3]) {"cd", "..", NULL}
 		},
 		.fd_in = STDIN_FILENO,
 		.fd_out = STDOUT_FILENO,
 	};
 	t_ast	pipe = {
 		.type = NODE_PIPE,
-		.left = &echo,
+		.left = &lsla,
 		.right = &wcc,
 		.fd_in = STDIN_FILENO,
 		.fd_out = STDOUT_FILENO,
 	};
-	return (traverse(&pipe));
+	t_ast	and = {
+		.type = NODE_AND,
+		.left = &cd,
+		.right = &pipe,
+		.fd_in = STDIN_FILENO,
+		.fd_out = STDOUT_FILENO,
+	};
+	return (traverse(&and));
 }
