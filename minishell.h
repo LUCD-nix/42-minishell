@@ -54,10 +54,25 @@ typedef enum e_token_type
 	T_RPAREN
 }					t_token_type;
 
+typedef enum e_quote_type
+{
+	Q_NONE,
+	Q_SIMPLE,
+	Q_DOUBLE
+}		t_quote_type;	
+
+typedef struct s_lexeme
+{
+	char *value;
+	t_quote_type quote;
+}	t_lexeme;
+
+
 typedef struct s_token
 {
 	char			*value;
 	t_token_type	type;
+	t_quote_type	quote;
 	struct s_token	*next;
 }					t_token;
 
@@ -86,23 +101,31 @@ typedef struct s_ast
 	t_env			*env;
 }	t_ast;
 
-/*---Debugs utils---*/
+/*---lexer---*/
 
-void				print_token(t_token *token);
+t_lexeme 			*lexer(char *line);
+void				free_lexemes(t_lexeme *lex);
+char 				*read_line(void);
+/*---token--*/
 
-/*---Tokenizer---*/
+t_token 			*init_token(const char *line, t_token_type type, t_quote_type quote);
+void 				free_token(t_token *token);
+t_token 			*lexer_to_token(t_lexeme *lex);
 
-t_token				*init_token(char *value, t_token_type type);
-void				free_token(t_token *token);
-t_token_type		get_token_type(const char *str);
-int					ft_isspace(char c);
+/*---ast + utils---*/
 
-/*---Lexer---*/
+void				free_ast(t_ast *ast);
+void				free_cmd(t_command *cmd);
+t_command 			*init_cmd(char *path, char **args);
+int					count_args(char **args);
+t_ast 				*init_ast(t_node_type type, t_command *command, char *filename, int fd_in, int fd_out);
 
-int is_operator_sign(char c);
-int is_separator(const char *s);
-void add_token(char **tokens, int *count, char *token);
-char *in_quote(const char *str);
+
+/*---envp---*/
+
+char 				*envp(char *key, char **envp);
+
+
 
 /*---Built-ins---*/
 int					builtin_echo(int argc,  char **argv);
@@ -118,11 +141,5 @@ t_env				*env_add(t_env *arr, char *str);
 t_env				*env_from_str_arr(char **to_copy);
 int					env_remove_key(t_env *env, char *key);
 
-/*---Ast---*/
-// t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
-// t_redir				*init_redir(char *filename, t_redir_type type);
-// void				free_args(char **args);
-// void				free_redir(t_redir *redir);
-// void				free_ast(t_ast *root);
 
 #endif
