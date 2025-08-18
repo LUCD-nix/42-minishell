@@ -67,6 +67,13 @@ typedef struct s_command
 	char	**args;
 }	t_command;
 
+typedef struct s_env
+{
+	size_t	size;
+	size_t	capacity;
+	char	*contents[];
+}	t_env;
+
 typedef struct s_ast
 {
 	t_node_type		type;
@@ -76,6 +83,7 @@ typedef struct s_ast
 	int				fd_out;
 	struct s_ast	*left;
 	struct s_ast	*right;
+	t_env			*env;
 }	t_ast;
 
 /*---Debugs utils---*/
@@ -104,6 +112,11 @@ int					builtin_export(int argc,  char **argv);
 int					builtin_unset(int argc,  char **argv);
 int					builtin_env(int argc,  char **argv);
 int					builtin_exit(int argc,  char **argv);
+
+/*--Env--*/
+t_env				*env_add(t_env *arr, char *str);
+t_env				*env_from_str_arr(char **to_copy);
+int					env_remove_key(t_env *env, char *key);
 
 /*---Ast---*/
 // t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
