@@ -56,10 +56,24 @@ typedef enum e_token_type
 	T_QUOTE
 }					t_token_type;
 
+typedef enum e_quote_type
+{
+	Q_NONE,
+	Q_SIMPLE,
+	Q_DOUBLE
+}		t_quote_type;	
+
+typedef struct s_lexeme
+{
+	char *value;
+	t_quote_type quote;
+}	t_lexeme;
+
 typedef struct s_token
 {
 	char			*value;
 	t_token_type	type;
+	t_quote_type	quote;
 	struct s_token	*next;
 }					t_token;
 
@@ -68,6 +82,13 @@ typedef struct s_command
 	char	*path;
 	char	**args;
 }	t_command;
+
+
+typedef struct s_parser
+{
+	t_token *current;
+	t_token *tokens;
+}				t_parser;
 
 typedef struct s_ast
 {
@@ -80,51 +101,30 @@ typedef struct s_ast
 	struct s_ast	*right;
 }	t_ast;
 
-/*---Debugs utils---*/
 
-void				print_token(t_token *token);
+/*---lexer---*/
 
-/*---Tokenizer---*/
+t_lexeme *lexer(char *line);
+void	free_lexemes(t_lexeme *lex);
+char *read_line(void);
+/*---token--*/
 
-t_token				*init_token(char *value, t_token_type type);
-void				free_token(t_token *token);
-void				add_token(t_token **token, char *value, t_token_type type);
-int					is_operator_char(char c);
-int					is_operator_len(const char *s);
-char				*parse_quote(const char *s, int *i);
-int					ft_isspace(char c);
-char				*parse_word(const char *s, int *i);
-t_token_type		parse_token_type(const char *op);
-t_token				*tokenize(const char *line);
-char				*parse_operator(const char *s, int *i);
+t_token *init_token(const char *line, t_token_type type, t_quote_type quote);
+void free_token(t_token *token);
+t_token *lexer_to_token(t_lexeme *lex);
 
-/*---Init structure---*/
+/*---ast + utils---*/
 
-t_command 			*init_command(char *path, char **args);
-t_ast 				*init_ast(t_node_type type, t_command *cmd, int fd_in, int fd_out);
-void 				free_args(char **args);
-void				free_cmd(t_command *cmd);
-void				free_ast(t_ast *ast);
-
-/*---Builtins---*/
-
-int					is_builtins(t_token *token);
-char				*builtins_path(int builtins);
-int					builtins_size(t_token *token);
-char				**builtins_args(t_token *token);
-int					fill_args_from_tokens(t_token *token, char **args, int start);
-t_command			*token_to_builtin_cmd(t_token *token);
-
-/*---Tokens to cmd---*/
+void	free_ast(t_ast *ast);
+void	free_cmd(t_command *cmd);
+t_command *init_cmd(char *path, char **args);
+int	count_args(char **args);
+t_ast *init_ast(t_node_type type, t_command *command, char *filename, int fd_in, int fd_out);
 
 
-/*---Built-ins---*/
-int					builtin_echo(int argc,  char **argv);
-int					builtin_cd(int argc,  char **argv);
-int					builtin_pwd(int argc,  char **argv);
-int					builtin_export(int argc,  char **argv);
-int					builtin_unset(int argc,  char **argv);
-int					builtin_env(int argc,  char **argv);
-int					builtin_exit(int argc,  char **argv);
+/*---envp---*/
+
+char *envp(char *key, char **envp);
+
 
 #endif // MINISHELL_H
