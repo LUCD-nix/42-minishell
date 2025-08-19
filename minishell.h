@@ -105,11 +105,16 @@ int					builtin_unset(int argc,  char **argv);
 int					builtin_env(int argc,  char **argv);
 int					builtin_exit(int argc,  char **argv);
 
-/*---Ast---*/
-// t_ast				*init_ast(char **args, t_cmd_type type, t_redir *redir);
-// t_redir				*init_redir(char *filename, t_redir_type type);
-// void				free_args(char **args);
-// void				free_redir(t_redir *redir);
-// void				free_ast(t_ast *root);
+/*---Pipes---*/
+int					pipe_create(t_ast *writer, t_ast *reader);
+void				pipe_propagate_fd(t_ast *node);
+int					pipe_from_file(char *filename);
+
+/*---Traversal--*/
+int					traverse_node(t_ast *node);
+
+/*---Execution---*/
+int					exec_process(t_ast *command);
+int					exec_builtin(t_ast *builtin);
 
 #endif
