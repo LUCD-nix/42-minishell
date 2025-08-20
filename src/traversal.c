@@ -119,8 +119,16 @@ int	traverse_file(t_ast *node, int flags)
 
 void	redir_propagate_fd(t_ast *node)
 {
-	node->right->fd_in = node->fd_in;
-	node->right->fd_out = node->fd_out;
+	if (node->type == NODE_IN)
+	{
+		node->right->fd_in = node->fd_in;
+		node->left->fd_out = node->fd_out;
+	}
+	else
+	{
+		node->left->fd_in = node->fd_in;
+		node->right->fd_out = node->fd_out;
+	}
 }
 
 int	traverse_node(t_ast *node)
@@ -174,11 +182,11 @@ int	traverse_node(t_ast *node)
 
 int main(void)
 {
-	t_ast	lsl = {
+	t_ast	cate = {
 		.type = NODE_CMD,
 		.command = &(t_command) {
-			.path = "/usr/bin/ls",
-			.args = (char *[3]) {"ls", "-la", NULL},
+			.path = "/usr/bin/cat",
+			.args = (char *[3]) {"cat", "-e", NULL},
 		},
 		.fd_in = STDIN_FILENO,
 		.fd_out = STDOUT_FILENO,
@@ -196,14 +204,14 @@ int main(void)
 		.fd_out = STDOUT_FILENO,
 	};
 	t_ast	redir1 = {
-		.type = NODE_OUT,
+		.type = NODE_IN,
 		.fd_in = STDIN_FILENO,
 		.fd_out = STDOUT_FILENO,
-		.left = &lsl,
+		.left = &cate,
 		.right = &file1,
 	};
 	t_ast	redir2 = {
-		.type = NODE_OUT,
+		.type = NODE_IN,
 		.fd_in = STDIN_FILENO,
 		.fd_out = STDOUT_FILENO,
 		.left = &redir1,
