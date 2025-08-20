@@ -103,9 +103,10 @@ int	builtin_pwd(int argc, char **argv)
 int	builtin_env(int argc, char **argv)
 {
 	extern char **to_copy;
-	int			i = 0;
+	int			i;
 
 	(void) argv;
+	i = 0;
 	if (argc != 1)
 	{
 		ft_printf("env : No arguments or flags supported!\n");
