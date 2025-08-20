@@ -11,8 +11,9 @@
 /* ************************************************************************** */
 #include "../minishell.h"
 #include <linux/limits.h>
+#include <stdlib.h>
 //
-// TODO : might want to change return values in all these functions
+// TODO : These should all return EXIT_SUCCESS EXIT_FAILURE
 //
 int	builtin_echo(int argc, char **argv, char **envp)
 {
@@ -61,6 +62,7 @@ int	builtin_cd(int argc, char **argv, char **envp)
 {
 	static char	home[PATH_MAX] = { 0 };
 
+	// TODO : handle cd - to go back to previous location
 	(void) envp;
 	if (!*home)
 	{
@@ -124,13 +126,77 @@ int	builtin_env(int argc, char **argv, char **envp)
 	return (0);
 }
 
-int	main(void)
+char	*key_from_args(t_ast *node, int i)
 {
-	extern char **environ;
+	int		j;
+	char	*key;
+	char	**args;
+
+	j = 0;
+	args = node->command->args;
+	while (args[i][j] && args[i][j] != '=')
+		j++;
+	key = ft_calloc(j + 1, 1);
+	if (!key)
+		return (NULL);
+	ft_strlcpy(key, node->command->args[i], j + 1);
+	return (key);
+}
+
+int	builtin_unset(int argc, t_ast *node)
+{
+	t_env	*env_array;
+	char	*key;
+	int		i;
+
+	env_array = node->env;
+	i = 0;
+	while (++i < argc)
+	{
+		key = key_from_args(node, i);
+		if (key == NULL)
+			return (EXIT_FAILURE);
+		env_remove_key(env_array, key);
+	}
+	return (EXIT_SUCCESS);
+}
+
+int	builtin_export(int argc, t_ast *node)
+{
+	t_env	*env_array;
+	char	*key;
+	int		i;
+	int		j;
+
+	// TODO : 
+	// if (argc == 1)
+	// 	return (export_no_args(envp));
+	env_array = node->env;
+	i = 0;
+	while (++i < argc)
+	{
+		key = key_from_args(node, i);
+		if (!key)
+			return (EXIT_FAILURE);
+		env_remove_key(env_array, key);
+		env_add(env_array, node->command->args[i]);
+		free(key);
+	}
+	return (EXIT_SUCCESS);
+}
+
+int	main(void)
+{	extern char **environ;
 
 	t_env *a = env_from_str_arr(environ);
-	env_add(a, "TEST=1");
-	builtin_env(1, NULL, a->contents);
-	env_remove_key(a, "TEST");
+	t_ast export = {
+		.type = NODE_BUILTIN,
+		.command = &(t_command){
+			.path = "export",
+			.args = (char *[4]) {"export", "TEST1=1", "TEST2=2", NULL},
+		},
+		.env = a,
+	};
+	builtin_export(3, &export);
 	builtin_env(1, NULL, a->contents);
 }

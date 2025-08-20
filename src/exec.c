@@ -28,10 +28,10 @@ int	exec_builtin(t_ast *node)
 	// 	return(builtin_cd(argc, argv, envp));
 	if (!ft_memcmp(node->command->path, "pwd", 4))
 		return (builtin_pwd(argc, argv, envp));
-	// if (!ft_memcmp(node->command->path, "export", 7))
-	// 	return(builtin_export(argc, argv, envp));
-	// if (!ft_memcmp(node->command->path, "unset", 6))
-	// 	return(builtin_unset(argc, argv, envp));
+	if (!ft_memcmp(node->command->path, "export", 7))
+		return(builtin_export(argc, node));
+	if (!ft_memcmp(node->command->path, "unset", 6))
+		return(builtin_unset(argc, node));
 	if (!ft_memcmp(node->command->path, "env", 4))
 		return (builtin_env(argc, argv, envp));
 	// if (!ft_memcmp(node->command->path, "exit", 5))

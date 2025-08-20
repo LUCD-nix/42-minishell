@@ -107,8 +107,8 @@ char				*in_quote(const char *str);
 int					builtin_echo(int argc,  char **argv, char **envp);
 int					builtin_cd(int argc,  char **argv, char **envp);
 int					builtin_pwd(int argc,  char **argv, char **envp);
-int					builtin_export(int argc,  char **argv, char **envp);
-int					builtin_unset(int argc,  char **argv, char **envp);
+int					builtin_export(int argc, t_ast *node);
+int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc,  char **argv, char **envp);
 int					builtin_exit(int argc,  char **argv, char **envp);
 
