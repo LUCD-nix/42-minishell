@@ -56,11 +56,9 @@ int	builtin_pwd(int argc, char **argv)
 		return (1);
 	}
 	cwd_buffer = NULL;
-	cwd_buffer = ft_calloc(PATH_MAX, sizeof *cwd_buffer);
+	cwd_buffer = ft_calloc(PATH_MAX, sizeof(*cwd_buffer));
 	if (cwd_buffer == NULL)
-	{
 		return (-1);
-	}
 	if (getcwd(cwd_buffer, PATH_MAX) == NULL)
 	{
 		free(cwd_buffer);
@@ -77,10 +75,11 @@ int	builtin_pwd(int argc, char **argv)
 
 int	builtin_env(int argc, char **argv)
 {
-	extern char **environ;
-	int			i = 0;
+	extern char	**environ;
+	int			i;
 
 	(void) argv;
+	i = 0;
 	if (argc != 1)
 	{
 		ft_printf("env : No arguments or flags supported!\n");

@@ -13,7 +13,7 @@
 
 int	exec_builtin(t_ast *node)
 {
-	int 	argc;
+	int		argc;
 	char	**argv;
 
 	argc = 0;
@@ -25,13 +25,13 @@ int	exec_builtin(t_ast *node)
 	// if (!ft_memcmp(node->command->path, "cd", 3))
 	// 	return(builtin_cd(argc, argv));
 	if (!ft_memcmp(node->command->path, "pwd", 4))
-		return(builtin_pwd(argc, argv));
+		return (builtin_pwd(argc, argv));
 	// if (!ft_memcmp(node->command->path, "export", 7))
 	// 	return(builtin_export(argc, argv));
 	// if (!ft_memcmp(node->command->path, "unset", 6))
 	// 	return(builtin_unset(argc, argv));
 	if (!ft_memcmp(node->command->path, "env", 4))
-		return(builtin_env(argc, argv));
+		return (builtin_env(argc, argv));
 	// if (!ft_memcmp(node->command->path, "exit", 5))
 	// 	return(builtin_exit(argc, argv));
 	// Unreachable
@@ -66,4 +66,3 @@ int	exec_process(t_ast *process)
 		waitpid(pid, &return_value, 0);
 	return (return_value);
 }
-

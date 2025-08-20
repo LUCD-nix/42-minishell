@@ -90,11 +90,10 @@ t_token_type		get_token_type(const char *str);
 int					ft_isspace(char c);
 
 /*---Lexer---*/
-
-int is_operator_sign(char c);
-int is_separator(const char *s);
-void add_token(char **tokens, int *count, char *token);
-char *in_quote(const char *str);
+int					is_operator_sign(char c);
+int					is_separator(const char *s);
+void				add_token(char **tokens, int *count, char *token);
+char				*in_quote(const char *str);
 
 /*---Built-ins---*/
 int					builtin_echo(int argc,  char **argv);
@@ -112,6 +111,11 @@ int					pipe_from_file(char *filename);
 
 /*---Traversal--*/
 int					traverse_node(t_ast *node);
+int					traverse_file(t_ast *node, int flags);
+int					traverse_pipe(t_ast *node);
+int					traverse_builtin(t_ast *node);
+int					traverse_andor(t_ast *node, t_node_type type);
+void				andor_propagate_fd(t_ast *node);
 
 /*---Execution---*/
 int					exec_process(t_ast *command);

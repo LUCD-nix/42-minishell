@@ -24,97 +24,43 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
-int	redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
+void	redir_propagate_fd(t_ast *node)
 {
-	if (node->fd_in != STDIN_FILENO)
+	if (node->type == NODE_IN)
 	{
-		*saved_in = dup(STDIN_FILENO);
-		if (*saved_in == -1 || dup2(node->fd_in, STDIN_FILENO) == -1)
-			return (-1);
+		node->right->fd_in = node->fd_in;
+		node->left->fd_out = node->fd_out;
 	}
-	if (node->fd_out != STDOUT_FILENO)
-	{
-		*saved_out = dup(STDOUT_FILENO);
-		if (*saved_out == -1 || dup2(node->fd_out, STDOUT_FILENO) == -1)
-			return (-1);
-	}
-	return (0);
-}
-
-int	traverse_builtin(t_ast *node)
-{
-	int	saved_in;
-	int	saved_out;
-	int	res;
-
-	saved_in = 0;
-	saved_out = 0;
-	if (redirect_builtin(node, &saved_in, &saved_out) == -1)
-		return (-1);
-	res = exec_builtin(node);
-	if (node->fd_in != STDIN_FILENO)
-	{
-		if (dup2(saved_in, STDIN_FILENO) == -1)
-			return (-1);
-	}
-	if (node->fd_out != STDOUT_FILENO)
-	{
-		if (dup2(saved_out, STDOUT_FILENO) == -1)
-			return (-1);
-	}
-	return (res);
-}
-
-int	traverse_pipe(t_ast *node)
-{
-	int	res;
-	res = -1;
-	pipe_propagate_fd(node);
-	if (pipe_create(node->left, node->right) == -1)
-		return (-1);
-	traverse_node(node->left);
-	if (close(node->left->fd_out) == -1)
-		return (-1);
-	res = traverse_node(node->right);
-	if (close(node->right->fd_in) == -1)
-		return (-1);
-	return (res);
-}
-
-int	traverse_andor(t_ast *node, t_node_type type)
-{
-	int	res;
-	res = -1;
-	andor_propagate_fd(node);
-	res = traverse_node(node->left);
-	if (type == NODE_AND)
-	{
-		if (res == EXIT_SUCCESS)
-			res = traverse_node(node->right);
-	}
-	// TODO : untested (NODE_OR)
 	else
 	{
-		if (res == EXIT_FAILURE)
-			res = traverse_node(node->right);
+		node->left->fd_in = node->fd_in;
+		node->right->fd_out = node->fd_out;
 	}
-	return (res);
 }
 
-int	traverse_file(t_ast *node, int flags)
+int	traverse_redir(t_ast *node)
 {
 	int	file_fd;
+	int	o_flags;
+	int	res;
 
-	file_fd = open(node->filename, flags, 0644);
+	redir_propagate_fd(node);
+	if (node->type == NODE_IN)
+		o_flags = O_RDONLY;
+	else if (node->type == NODE_OUT)
+		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
+	else
+		o_flags = O_WRONLY | O_CREAT | O_APPEND;
+	file_fd = traverse_file(node->right, o_flags);
 	if (file_fd == -1)
 		return (-1);
-	if (node->fd_in != STDIN_FILENO
-		&& dup2(node->fd_in, file_fd) == -1)
-		return (-1);
-	if (node->fd_out != STDOUT_FILENO
-		&& dup2(node->fd_out, file_fd) == -1)
-		return (-1);
-	return (file_fd);
+	if (node->type == NODE_IN)
+		node->left->fd_in = file_fd;
+	else
+		node->left->fd_out = file_fd;
+	res = traverse_node(node->left);
+	close(file_fd);
+	return (res);
 }
 
 void	redir_propagate_fd(t_ast *node)
@@ -133,50 +79,22 @@ void	redir_propagate_fd(t_ast *node)
 
 int	traverse_node(t_ast *node)
 {
-	int		res;
-	int		file_fd;
+	int			res;
+	t_node_type	type;
 
+	// TODO : Heredoc
 	res = -1;
-	if (node->type == NODE_CMD)
+	type = node->type;
+	if (type == NODE_CMD)
 		res = exec_process(node);
-	else if (node->type == NODE_BUILTIN)
+	else if (type == NODE_BUILTIN)
 		res = traverse_builtin(node);
-	else if (node->type == NODE_PIPE)
+	else if (type == NODE_PIPE)
 		res = traverse_pipe(node);
-	else if (node->type == NODE_IN)
-	{
-		redir_propagate_fd(node);
-		file_fd = traverse_file(node->right, O_RDONLY);
-		if (file_fd == -1)
-			return (-1);
-		node->left->fd_in = file_fd;
-		res = traverse_node(node->left);
-		close(file_fd);
-	}
-	else if (node->type == NODE_OUT)
-	{
-		redir_propagate_fd(node);
-		file_fd = traverse_file(node->right,
-			 O_WRONLY | O_TRUNC | O_CREAT);
-		if (file_fd == -1)
-			return (-1);
-		node->left->fd_out = file_fd;
-		res = traverse_node(node->left);
-		close(file_fd);
-	}
-	else if (node->type == NODE_APPEND)
-	{
-		redir_propagate_fd(node);
-		file_fd = traverse_file(node->right,
-			 O_WRONLY | O_APPEND | O_CREAT);
-		if (file_fd == -1)
-			return (-1);
-		node->left->fd_out = file_fd;
-		res = traverse_node(node->left);
-		close(file_fd);
-	}
-	else if (node->type == NODE_AND || node->type  == NODE_OR)
-		res = traverse_andor(node, node->type);
+	else if (type == NODE_IN || type == NODE_OUT || type == NODE_APPEND)
+		res = traverse_redir(node);
+	else if (type == NODE_AND || type == NODE_OR)
+		res = traverse_andor(node, type);
 	return (res);
 }
 
