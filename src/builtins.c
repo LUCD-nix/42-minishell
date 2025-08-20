@@ -14,11 +14,12 @@
 //
 // TODO : might want to change return values in all these functions
 //
-int	builtin_echo(int argc, char **argv)
+int	builtin_echo(int argc, char **argv, char **envp)
 {
 	int	i;
 	int	write_new_line;
 
+	(void) envp;
 	if (argc == 1)
 	{
 		if (ft_printf("\n") < 0)
@@ -56,10 +57,11 @@ static int	get_home_dir(char	*buf)
 	return (0);
 }
 
-int	builtin_cd(int argc, char **argv)
+int	builtin_cd(int argc, char **argv, char **envp)
 {
 	static char	home[PATH_MAX] = { 0 };
 
+	(void) envp;
 	if (!*home)
 	{
 		if (get_home_dir(home) == 1)
@@ -80,11 +82,12 @@ int	builtin_cd(int argc, char **argv)
 // PATH_MAX is 4096 according to getconf PATH_MAX,
 // maybe get it from env right here instead of
 // harcoding it
-int	builtin_pwd(int argc, char **argv)
+int	builtin_pwd(int argc,  char **argv, char **envp)
 {
 	char	cwd_buffer[PATH_MAX];
 
 	(void) argv;
+	(void) envp;
 	if (argc != 1)
 	{
 		ft_printf("pwd : too many arguments\n");
@@ -100,9 +103,9 @@ int	builtin_pwd(int argc, char **argv)
 	}
 	return (0);
 }
-int	builtin_env(int argc, char **argv)
+
+int	builtin_env(int argc, char **argv, char **envp)
 {
-	extern char **to_copy;
 	int			i;
 
 	(void) argv;
@@ -112,11 +115,22 @@ int	builtin_env(int argc, char **argv)
 		ft_printf("env : No arguments or flags supported!\n");
 		return (1);
 	}
-	while (to_copy[i] != NULL)
+	while (envp[i] != NULL)
 	{
-		if (ft_printf("%s\n", to_copy[i]) < 0)
+		if (ft_printf("%s\n", envp[i]) < 0)
 			return (-1);
 		i++;
 	}
 	return (0);
+}
+
+int	main(void)
+{
+	extern char **environ;
+
+	t_env *a = env_from_str_arr(environ);
+	env_add(a, "TEST=1");
+	builtin_env(1, NULL, a->contents);
+	env_remove_key(a, "TEST");
+	builtin_env(1, NULL, a->contents);
 }

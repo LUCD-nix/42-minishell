@@ -13,8 +13,8 @@
 
 int	env_remove_key(t_env *env, char *key)
 {
-	int	i;
-	int	key_length;
+	unsigned int	i;
+	unsigned int	key_length;
 
 	key_length = ft_strlen(key);
 	i = 0;
@@ -41,7 +41,7 @@ t_env	*env_from_str_arr(char **to_copy)
 	len = 0;
 	while (to_copy[len] != NULL)
 		len++;
-	res = ft_calloc(1, sizeof(*res) + 2 * len * sizeof(char *) + 1);
+	res = ft_calloc(1, sizeof(*res) + (2 * len + 1) * sizeof(char *));
 	if (!res)
 		return (NULL);
 	i = 0;
@@ -67,7 +67,9 @@ t_env	*env_add(t_env *arr, char *str)
 
 	if (arr->capacity >= arr->size + 1)
 	{
-		arr->contents[arr->size] = str;
+		arr->contents[arr->size] = ft_strdup(str);
+		if (arr->contents[arr->size] == NULL)
+			return(free(arr), NULL);
 		arr->size++;
 	}
 	else
