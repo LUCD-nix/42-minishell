@@ -23,9 +23,9 @@ int	exec_builtin(t_ast *node)
 	while (argv[argc] != NULL)
 		argc++;
 	if (!ft_memcmp(node->command->path, "echo", 5))
-		return (builtin_echo(argc, argv, envp));
-	// if (!ft_memcmp(node->command->path, "cd", 3))
-	// 	return(builtin_cd(argc, argv, envp));
+		return (builtin_echo(argc, argv,envp));
+	if (!ft_memcmp(node->command->path, "cd", 3))
+		return(builtin_cd(argc, argv, envp));
 	if (!ft_memcmp(node->command->path, "pwd", 4))
 		return (builtin_pwd(argc, argv, envp));
 	if (!ft_memcmp(node->command->path, "export", 7))

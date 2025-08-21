@@ -22,14 +22,34 @@ int	env_remove_key(t_env *env, char *key)
 	{
 		if (!ft_strncmp(key, env->contents[i], key_length))
 		{
-			free(env->contents[i]);
 			env->contents[i] = env->contents[env->size - 1];
 			env->contents[env->size - 1] = NULL;
+			env->size--;
 			return (0);
 		}
 		i++;
 	}
 	return (-1);
+}
+
+t_env	*env_realloc(t_env *to_copy)
+{
+	t_env	*res;
+	size_t	i;
+
+	res = ft_calloc(1, sizeof(*res) + (2 * to_copy->size + 1) * sizeof(char *));
+	if (!res)
+		return (NULL);
+	i = 0;
+	while (i < to_copy->size)
+	{
+		res->contents[i] = to_copy->contents[i];
+		i++;
+	}
+	res->capacity = 2 * to_copy->size;
+	res->size = to_copy->size;
+	free(to_copy);
+	return (res);
 }
 
 t_env	*env_from_str_arr(char **to_copy)
@@ -47,13 +67,7 @@ t_env	*env_from_str_arr(char **to_copy)
 	i = 0;
 	while (i < len)
 	{
-		res->contents[i] = ft_strdup(to_copy[i]);
-		if (res->contents[i] == NULL)
-		{
-			free(res);
-			// TODO : print error ?
-			exit(EXIT_FAILURE);
-		}
+		res->contents[i] = to_copy[i];
 		i++;
 	}
 	res->capacity = 2 * len;
@@ -67,15 +81,12 @@ t_env	*env_add(t_env *arr, char *str)
 
 	if (arr->capacity >= arr->size + 1)
 	{
-		arr->contents[arr->size] = ft_strdup(str);
-		if (arr->contents[arr->size] == NULL)
-			return(free(arr), NULL);
+		arr->contents[arr->size] = str;
 		arr->size++;
 	}
 	else
 	{
-		temp = env_from_str_arr(arr->contents);
-		free(arr);
+		temp = env_realloc(arr);
 		arr = temp;
 		env_add(arr, str);	// TODO : testing
 	}

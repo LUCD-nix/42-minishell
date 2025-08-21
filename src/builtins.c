@@ -13,7 +13,7 @@
 #include <linux/limits.h>
 #include <stdlib.h>
 //
-// TODO : These should all return EXIT_SUCCESS EXIT_FAILURE
+// TODO : builtin_* should all return EXIT_SUCCESS EXIT_FAILURE
 //
 int	builtin_echo(int argc, char **argv, char **envp)
 {
@@ -24,8 +24,8 @@ int	builtin_echo(int argc, char **argv, char **envp)
 	if (argc == 1)
 	{
 		if (ft_printf("\n") < 0)
-			return (-1);
-		return (0);
+			return (EXIT_FAILURE);
+		return (EXIT_SUCCESS);
 	}
 	i = 1;
 	write_new_line = ft_strncmp(argv[1], "-n", 3);
@@ -34,15 +34,15 @@ int	builtin_echo(int argc, char **argv, char **envp)
 	while (i < argc)
 	{
 		if (ft_printf("%s", argv[i]) < 0)
-			return (-1);
+			return (EXIT_FAILURE);
 		i++;
 	}
 	if (write_new_line)
 	{
 		if (ft_printf("\n") < 0)
-			return (-1);
+			return (EXIT_FAILURE);
 	}
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 static int	get_home_dir(char	*buf)
@@ -93,17 +93,17 @@ int	builtin_pwd(int argc,  char **argv, char **envp)
 	if (argc != 1)
 	{
 		ft_printf("pwd : too many arguments\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 	if (getcwd(cwd_buffer, PATH_MAX) == NULL)
 	{
-		return (-1);
+		return (EXIT_FAILURE);
 	}
 	if (ft_printf("%s\n", cwd_buffer) < 0)
 	{
-		return (-1);
+		return (EXIT_FAILURE);
 	}
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 int	builtin_env(int argc, char **argv, char **envp)
@@ -115,15 +115,15 @@ int	builtin_env(int argc, char **argv, char **envp)
 	if (argc != 1)
 	{
 		ft_printf("env : No arguments or flags supported!\n");
-		return (1);
+		return (EXIT_FAILURE);
 	}
 	while (envp[i] != NULL)
 	{
 		if (ft_printf("%s\n", envp[i]) < 0)
-			return (-1);
+			return (EXIT_FAILURE);
 		i++;
 	}
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 char	*key_from_args(t_ast *node, int i)
@@ -157,6 +157,7 @@ int	builtin_unset(int argc, t_ast *node)
 		if (key == NULL)
 			return (EXIT_FAILURE);
 		env_remove_key(env_array, key);
+		free(key);
 	}
 	return (EXIT_SUCCESS);
 }
@@ -166,7 +167,6 @@ int	builtin_export(int argc, t_ast *node)
 	t_env	*env_array;
 	char	*key;
 	int		i;
-	int		j;
 
 	// TODO : 
 	// if (argc == 1)
@@ -186,7 +186,8 @@ int	builtin_export(int argc, t_ast *node)
 }
 
 int	main(void)
-{	extern char **environ;
+{
+	extern char **environ;
 
 	t_env *a = env_from_str_arr(environ);
 	t_ast export = {
@@ -197,6 +198,18 @@ int	main(void)
 		},
 		.env = a,
 	};
+	t_ast unset = {
+		.type = NODE_BUILTIN,
+		.command = &(t_command){
+			.path = "unset",
+			.args = (char *[4]) {"unset", "TEST1=1", "TEST2=2", NULL},
+		},
+		.env = a,
+	};
 	builtin_export(3, &export);
 	builtin_env(1, NULL, a->contents);
+	builtin_unset(3, &unset);
+	builtin_env(1, NULL, a->contents);
+	free(a);
+	return (0);
 }
