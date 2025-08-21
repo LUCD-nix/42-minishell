@@ -162,15 +162,54 @@ int	builtin_unset(int argc, t_ast *node)
 	return (EXIT_SUCCESS);
 }
 
+void	ft_sort_str_tab(char **tab, int size)
+{
+	int		i;
+	int		j;
+	char	*tmp;
+
+	i = size;
+	while (i >= 0)
+	{
+		j = 0;
+		while (j < i - 1)
+		{
+			if (ft_strcmp(tab[j], tab[j + 1]) > 0)
+			{
+				tmp = tab[j];
+				tab[j] = tab[j + 1];
+				tab[j + 1] = tmp;
+			}
+			j++;
+		}
+		i--;
+	}
+}
+
+int	export_no_args(t_ast *node)
+{
+	t_env	*env;
+	size_t	i;
+
+	env = node->env;
+	ft_sort_str_tab(env->contents, env->size);
+	i = 0;
+	while (i < env->size)
+	{
+		ft_printf("declare -x %s\n", env->contents[i]);
+		i++;
+	}
+	return (0);
+}
+
 int	builtin_export(int argc, t_ast *node)
 {
 	t_env	*env_array;
 	char	*key;
 	int		i;
 
-	// TODO : 
-	// if (argc == 1)
-	// 	return (export_no_args(envp));
+	if (argc == 1)
+		return (export_no_args(node));
 	env_array = node->env;
 	i = 0;
 	while (++i < argc)
@@ -206,10 +245,18 @@ int	main(void)
 		},
 		.env = a,
 	};
+	t_ast export_empty = {
+		.type = NODE_BUILTIN,
+		.command = &(t_command){
+			.path = "export",
+			.args = (char *[2]) {"export", NULL},
+		},
+		.env = a,
+	};
 	builtin_export(3, &export);
-	builtin_env(1, NULL, a->contents);
+	builtin_export(1, &export_empty);
 	builtin_unset(3, &unset);
-	builtin_env(1, NULL, a->contents);
+	builtin_export(1, &export_empty);
 	free(a);
 	return (0);
 }
