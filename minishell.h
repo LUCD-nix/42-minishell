@@ -69,9 +69,8 @@ typedef struct s_command
 
 typedef struct s_env
 {
-	size_t	size;
-	size_t	capacity;
-	char	*contents[];
+	char	*key;
+	char	*value;
 }	t_env;
 
 typedef struct s_ast
@@ -113,8 +112,8 @@ int					builtin_env(int argc,  char **argv, char **envp);
 int					builtin_exit(int argc,  char **argv, char **envp);
 
 /*--Env--*/
-t_env				*env_add(t_env *arr, char *str);
-t_env				*env_from_str_arr(char **to_copy);
+t_list				*env_lst_add(t_list **lst, char *str);
+t_list				*env_lst_from_str_arr(char **to_copy);
 int					env_remove_key(t_env *env, char *key);
 
 /*---Pipes---*/

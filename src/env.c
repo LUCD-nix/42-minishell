@@ -11,84 +11,139 @@
 /* ************************************************************************** */
 #include "../minishell.h"
 
-int	env_remove_key(t_env *env, char *key)
+void	env_free(void *ptr)
 {
-	unsigned int	i;
-	unsigned int	key_length;
+	t_env	*env;
 
-	key_length = ft_strlen(key);
-	i = 0;
-	while (i < env->size)
-	{
-		if (!ft_strncmp(key, env->contents[i], key_length))
-		{
-			env->contents[i] = env->contents[env->size - 1];
-			env->contents[env->size - 1] = NULL;
-			env->size--;
-			return (0);
-		}
-		i++;
-	}
-	return (-1);
+	env = (t_env *) ptr;
+	free(env->key);
+	free(env->value);
+	free(env);
 }
 
-t_env	*env_realloc(t_env *to_copy)
+void env_delete_key(t_list **head, char *key)
 {
-	t_env	*res;
-	size_t	i;
+	t_list	*temp;
+	t_list	*prev;
 
-	res = ft_calloc(1, sizeof(*res) + (2 * to_copy->size + 1) * sizeof(char *));
-	if (!res)
-		return (NULL);
-	i = 0;
-	while (i < to_copy->size)
+	temp = *head;
+    if (temp != NULL && !ft_strcmp(((t_env *)temp->content)->key, key))
 	{
-		res->contents[i] = to_copy->contents[i];
+        *head = temp->next;
+        ft_lstdelone(temp, &env_free);
+        return ;
+    }
+    while (temp != NULL && ft_strcmp(((t_env *)temp->content)->key, key))
+	{
+        prev = temp;
+        temp = temp->next;
+    }
+    if (temp == NULL)
+        return;
+    prev->next = temp->next;
+	ft_lstdelone(temp, &env_free);
+}
+
+t_env	env_from_str(char *str)
+{
+	int		key_len;
+	char	*cursor;
+	char	*key;
+	char	*value;
+
+	// TODO : temp, ensure that export, e.g, TEST="$USER" is expanded correctly
+	cursor = ft_strchr(str, '=');
+	if (cursor == NULL)
+	{
+		key = ft_strdup(str);
+		value = ft_calloc(1,1);
+		return ((t_env){.key = key, .value = value});
+	}
+	key_len = cursor - str;
+	key = ft_calloc(key_len + 1, sizeof(char));
+	ft_strlcpy(key, str, key_len + 1);
+	cursor++;
+	value = ft_calloc(ft_strlen(cursor) + 1, sizeof(char));
+	ft_strlcpy(value, cursor, ft_strlen(cursor) + 1);
+	return ((t_env) {.key = key, .value = value});
+}
+
+t_list	*env_lst_add(t_list **lst, char *str)
+{
+	t_env	*tmp;
+
+	tmp = ft_calloc(1, sizeof(t_env));
+	if (tmp == NULL)
+		return (NULL);
+	*tmp = env_from_str(str);
+	ft_lstadd_back(lst, ft_lstnew(tmp));
+	return (*lst);
+}
+
+t_list	*env_lst_from_str_arr(char **to_copy)
+{
+	t_list	*res;
+	int		i;
+
+	i = 0;
+	res = NULL;
+	while (to_copy[i] != NULL)
+	{
+		if (env_lst_add(&res, to_copy[i]) == NULL)
+			return (NULL);
 		i++;
 	}
-	res->capacity = 2 * to_copy->size;
-	res->size = to_copy->size;
-	free(to_copy);
+	return (res);
+}
+char **env_lst_to_str_array(t_list *env)
+{
+	t_list	*cursor;
+	char	**res;
+	char	*temp;
+	int		size;
+	int		i;
+
+	cursor = env;
+	size = ft_lstsize(env);
+	res = ft_calloc(size + 1, sizeof(*res));
+	if (res == NULL)
+		return (NULL);
+	i = 0;
+	while (i < size)
+	{
+		temp = ft_strjoin(((t_env *)env->content)->key, "=");
+		if (temp == NULL)
+			return (NULL);
+		res[i] = ft_strjoin_free_first(temp, ((t_env *)env->content)->value);
+		if (res[i] == NULL)
+			return (NULL);
+		env = env->next;
+		i++;
+	}
 	return (res);
 }
 
-t_env	*env_from_str_arr(char **to_copy)
+void	print_env(void *ptr)
 {
-	t_env		*res;
-	int			len;
-	int			i;
+	t_env	*env;
+	env = ptr;
+	ft_printf("%s=\"%s\"\n", env->key, env->value);
+}
+int	main(void)
+{
+	extern char	**environ;
+	t_list		*env_list;
+	char		**own_env;
 
-	len = 0;
-	while (to_copy[len] != NULL)
-		len++;
-	res = ft_calloc(1, sizeof(*res) + (2 * len + 1) * sizeof(char *));
-	if (!res)
-		return (NULL);
-	i = 0;
-	while (i < len)
+	env_list = env_lst_from_str_arr(environ);
+	env_lst_add(&env_list, "TEST=1");
+	ft_lstiter(env_list, &print_env);
+	own_env = env_lst_to_str_array(env_list);
+	int i = 0;
+	while (own_env[i] != NULL)
 	{
-		res->contents[i] = to_copy[i];
+		ft_printf("%s\n", own_env[i]);
 		i++;
 	}
-	res->capacity = 2 * len;
-	res->size = len;
-	return (res);
-}
-
-t_env	*env_add(t_env *arr, char *str)
-{
-	t_env	*temp;
-
-	if (arr->capacity >= arr->size + 1)
-	{
-		arr->contents[arr->size] = str;
-		arr->size++;
-	}
-	else
-	{
-		temp = env_realloc(arr);
-		arr = temp;
-		env_add(arr, str);	// TODO : testing
-	}
-	return (arr);
+	return (0);
 }
