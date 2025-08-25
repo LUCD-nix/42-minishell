@@ -1,8 +1,8 @@
 #include "../minishell.h"
 
-t_token *init_token(const char *line, t_token_type type, t_quote_type quote)
+t_token	*init_token(const char *line, t_token_type type, t_quote_type quote)
 {
-	t_token *new;
+	t_token	*new;
 
 	new = malloc(sizeof(t_token));
 	if (!new)
@@ -11,8 +11,10 @@ t_token *init_token(const char *line, t_token_type type, t_quote_type quote)
 	{
 		new->value = ft_strdup(line);
 		if (!new->value)
-			return (free_token(new), NULL);
+			return (free(new), NULL);
 	}
+	else
+		new->value = NULL;
 	new->type = type;
 	new->quote = quote;
 	new->next = NULL;
@@ -21,10 +23,8 @@ t_token *init_token(const char *line, t_token_type type, t_quote_type quote)
 
 void	free_token(t_token *token)
 {
-	t_token *tmp;
+	t_token	*tmp;
 
-	if (!token)
-			return ;
 	while (token)
 	{
 		tmp = token;
@@ -35,19 +35,17 @@ void	free_token(t_token *token)
 	}
 }
 
-// Find type
-
-t_token_type token_type(char *token)
+t_token_type	get_token_type(char *token)
 {
 	if (!token)
-		return (-1);
+		return (T_EOF);
 	if (ft_strncmp(token, "||", 2) == 0)
 		return (T_OR);
 	if (ft_strncmp(token, "&&", 2) == 0)
 		return (T_AND);
-	if (ft_strncmp(token, "<<", 2) == 0)
-		return (T_APPEND);
 	if (ft_strncmp(token, ">>", 2) == 0)
+		return (T_APPEND);
+	if (ft_strncmp(token, "<<", 2) == 0)
 		return (T_HEREDOC);
 	if (ft_strncmp(token, "|", 1) == 0)
 		return (T_PIPE);
@@ -56,19 +54,18 @@ t_token_type token_type(char *token)
 	if (ft_strncmp(token, ")", 1) == 0)
 		return (T_RPAREN);
 	if (ft_strncmp(token, ">", 1) == 0)
-		return (T_REDIR_IN);
-	if (ft_strncmp(token, "<", 1) == 0)
 		return (T_REDIR_OUT);
-	else
-		return (T_WORD);
+	if (ft_strncmp(token, "<", 1) == 0)
+		return (T_REDIR_IN);
+	return (T_WORD);
 }
 
-t_token *lexer_to_token(t_lexeme *lex)
+t_token	*lexer_to_token(t_lexeme *lex)
 {
-	t_token *new_node;
-	t_token *current;
-	t_token *head;
-	int i;
+	t_token	*head;
+	t_token	*current;
+	t_token	*new_node;
+	int		i;
 
 	if (!lex)
 		return (NULL);
@@ -77,7 +74,7 @@ t_token *lexer_to_token(t_lexeme *lex)
 	i = 0;
 	while (lex[i].value)
 	{
-		new_node = init_token(lex[i].value, token_type(lex[i].value), lex[i].quote);
+		new_node = init_token(lex[i].value, get_token_type(lex[i].value), lex[i].quote);
 		if (!new_node)
 			return (free_token(head), NULL);
 		if (!head)
@@ -93,46 +90,4 @@ t_token *lexer_to_token(t_lexeme *lex)
 		i++;
 	}
 	return (head);
-}
-
-int main(void)
-{
-	char		*line;
-	t_lexeme	*lex;
-	t_token		*tokens;
-	t_token		*tmp;
-
-	while (1)
-	{
-		line = read_line(); // récupère la ligne entrée par l'utilisateur
-		if (!line)
-			break; // CTRL+D ou EOF
-
-		// 1. Lexer : transforme line en tableau de lexèmes
-		lex = lexer(line);
-		free(line);
-		if (!lex)
-			continue;
-
-		// 2. Convertir lexèmes en liste de tokens
-		tokens = lexer_to_token(lex);
-		free_lexemes(lex); // à toi d’implémenter pour libérer lex[i].value et le tableau
-
-		if (!tokens)
-			continue;
-
-		// 3. Affichage des tokens (debug)
-		printf("=== TOKENS ===\n");
-		tmp = tokens;
-		while (tmp)
-		{
-			printf("value = [%s], type = %d, quote = %d\n",
-				tmp->value, tmp->type, tmp->quote);
-			tmp = tmp->next;
-		}
-
-		// 4. Libération
-		free_token(tokens);
-	}
-	return (0);
 }

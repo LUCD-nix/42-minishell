@@ -1,8 +1,8 @@
 #include "../minishell.h"
 
-char *read_line(void)
+char	*read_line(void)
 {
-	char *line;
+	char	*line;
 
 	line = readline("$Minishell ");
 	if (!line)
@@ -13,9 +13,9 @@ char *read_line(void)
 	return (line);
 }
 
-static t_lexeme handle_separator(char *line, int *i)
+static t_lexeme	handle_separator(char *line, int *i)
 {
-	t_lexeme lex;
+	t_lexeme	lex;
 
 	lex = (t_lexeme){NULL, Q_NONE};
 	if (!line)
@@ -45,11 +45,13 @@ static t_lexeme handle_separator(char *line, int *i)
 	return (lex);
 }
 
-static t_lexeme handle_quote(char *line, int *i)
+
+
+static t_lexeme	handle_quote(char *line, int *i)
 {
-	t_lexeme lex;
-	char quote;
-	int index;
+	t_lexeme	lex;
+	char		quote;
+	int			index;
 
 	lex = (t_lexeme){NULL, Q_NONE};
 	if (!line)
@@ -61,7 +63,11 @@ static t_lexeme handle_quote(char *line, int *i)
 	while (line[index] && line[index] != quote)
 		index++;
 	if (!line[index])
-		return (printf("Syntax error: Unclosed quote\n"), lex);
+	{
+		printf("minishell: syntax error: unclosed quote\n");
+		*i += index;
+		return (lex);
+	}
 	lex.value = ft_substr(line, 1, index - 1);
 	if (quote == '\'')
 		lex.quote = Q_SIMPLE;
@@ -71,48 +77,50 @@ static t_lexeme handle_quote(char *line, int *i)
 	return (lex);
 }
 
-static int		is_separator(char *line)
+
+static int	is_separator(char *line)
 {
 	if (!line)
 		return (0);
-	if (ft_strncmp(line, "||", 2) == 0 || ft_strncmp(line, "&&", 2) == 0 || ft_strncmp(line, ">>", 2) == 0 ||
-		ft_strncmp(line, "<<", 2) == 0 ) 
+	if (ft_strncmp(line, "||", 2) == 0 || ft_strncmp(line, "&&", 2) == 0
+		|| ft_strncmp(line, ">>", 2) == 0 || ft_strncmp(line, "<<", 2) == 0)
 		return (1);
-	if(ft_strncmp(line, ")", 1) == 0 || ft_strncmp(line, "(", 1) == 0 || ft_strncmp(line, "|", 1) == 0 ||
-		ft_strncmp(line, ">", 1) == 0 || ft_strncmp(line, "<", 1) == 0 || ft_strncmp(line, ";", 1) == 0 || 
-		ft_strncmp(line, "&", 1) == 0)
+	if (ft_strncmp(line, ")", 1) == 0 || ft_strncmp(line, "(", 1) == 0
+		|| ft_strncmp(line, "|", 1) == 0 || ft_strncmp(line, ">", 1) == 0
+		|| ft_strncmp(line, "<", 1) == 0 || ft_strncmp(line, ";", 1) == 0
+		|| ft_strncmp(line, "&", 1) == 0)
 		return (1);
 	if (line[0] == '\'' || line[0] == '"')
 		return (2);
 	return (0);
 }
 
-static t_lexeme handle_word(char *line, int *i)
+static t_lexeme	handle_word(char *line, int *i)
 {
-	int index;
-	t_lexeme lex;
+	int			index;
+	t_lexeme	lex;
 
 	lex = (t_lexeme){NULL, Q_NONE};
 	index = 0;
 	while (line[index] && !is_separator(&line[index]) && line[index] != ' ')
 	{
 		if (line[index] == '\\' && line[index + 1])
-	  		index++;
+			index++;
 		index++;
 	}
 	return (*i += index, lex.value = ft_substr(line, 0, index), lex);
 }
 
-void	skip_spaces(char *line, int *i)
+static void	skip_spaces(char *line, int *i)
 {
 	while (line[*i] == '\t' || line[*i] == ' ')
 		(*i)++;
 }
 
-t_lexeme *add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
+static t_lexeme	*add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
 {
-	t_lexeme *new_lexeme;
-	int i;
+	t_lexeme	*new_lexeme;
+	int			i;
 
 	i = 0;
 	new_lexeme = malloc(sizeof(t_lexeme) * (count + 2));
@@ -131,7 +139,7 @@ t_lexeme *add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
 
 void	free_lexemes(t_lexeme *lex)
 {
-	int i;
+	int	i;
 
 	if (!lex)
 		return ;
@@ -144,13 +152,14 @@ void	free_lexemes(t_lexeme *lex)
 	free(lex);
 }
 
-t_lexeme *lexer(char *line)
+t_lexeme	*lexer(char *line)
 {
-	t_lexeme lex;
-	t_lexeme *lexeme = NULL;
-	int i;
-	int count;
+	t_lexeme	lex;
+	t_lexeme	*lexeme;
+	int			i;
+	int			count;
 
+	lexeme = NULL;
 	i = 0;
 	count = 0;
 	while (line[i])
@@ -172,41 +181,4 @@ t_lexeme *lexer(char *line)
 	}
 	return (lexeme);
 }
-
-// int main(void)
-// {
-//     char *line;
-//     t_lexeme *lexemes;
-//     int i;
-//
-//     while (1)
-//     {
-//         line = read_line(); // suppose que read_line renvoie une ligne allouée
-//         if (!line)
-//             break ; // Ctrl+D ou erreur
-//
-//         lexemes = lexer(line);
-//         free(line);
-//
-//         if (!lexemes)
-//             continue ;
-//
-//         i = 0;
-//         while (lexemes[i].value)
-//         {
-//             printf("Lexeme[%d]: \"%s\" Quote: %d\n", i, lexemes[i].value, lexemes[i].quote);
-//             free(lexemes[i].value);
-//             i++;
-//         }
-//         free(lexemes);
-//     }
-//
-//     return 0;
-// }
-
-
-
-
-
-
 
