@@ -11,32 +11,45 @@
 /* ************************************************************************** */
 #include "../minishell.h"
 
+void	free_envp(char **envp)
+{
+// TODO : this is also needed to free args in command struct, should reuse
+	int	i;
+
+	i = -1;
+	while (envp[++i] != NULL)
+		free(envp[i]);
+	free(envp);
+}
+
 int	exec_builtin(t_ast *node)
 {
 	int		argc;
+	int		res;
 	char	**argv;
 	char	**envp;
 
+	res = -1;
 	argc = 0;
 	argv = node->command->args;
-	envp = node->env->contents;
+	envp = env_lst_to_str_array(*node->env);
 	while (argv[argc] != NULL)
 		argc++;
 	if (!ft_memcmp(node->command->path, "echo", 5))
-		return (builtin_echo(argc, argv,envp));
-	if (!ft_memcmp(node->command->path, "cd", 3))
-		return(builtin_cd(argc, argv, envp));
-	if (!ft_memcmp(node->command->path, "pwd", 4))
-		return (builtin_pwd(argc, argv, envp));
-	if (!ft_memcmp(node->command->path, "export", 7))
-		return(builtin_export(argc, node));
-	if (!ft_memcmp(node->command->path, "unset", 6))
-		return(builtin_unset(argc, node));
-	if (!ft_memcmp(node->command->path, "env", 4))
-		return (builtin_env(argc, argv, envp));
+		res = builtin_echo(argc, argv);
+	else if (!ft_memcmp(node->command->path, "cd", 3))
+		res = builtin_cd(argc, node);
+	else if (!ft_memcmp(node->command->path, "pwd", 4))
+		res = builtin_pwd(argc);
+	else if (!ft_memcmp(node->command->path, "export", 7))
+		res = builtin_export(argc, node);
+	else if (!ft_memcmp(node->command->path, "unset", 6))
+		res = builtin_unset(argc, node);
+	else if (!ft_memcmp(node->command->path, "env", 4))
+		res = (builtin_env(argc, argv, envp));
 	// if (!ft_memcmp(node->command->path, "exit", 5))
 	// 	return(builtin_exit(argc, argv, envp));
-	// Unreachable
+	free_envp(envp);
 	return (-1);
 }
 
@@ -48,9 +61,9 @@ int	exec_process(t_ast *process)
 
 	return_value = -1;
 	pid = fork();
-	envp = process->env->contents;
 	if (pid == -1)
 		return (-1);
+	envp = env_lst_to_str_array(*process->env);
 	if (pid == CHILD_PID)
 	{
 		if (process->fd_in != STDIN_FILENO
@@ -62,6 +75,9 @@ int	exec_process(t_ast *process)
 		execve(process->command->path, process->command->args, envp);
 	}
 	else
+	{
 		waitpid(pid, &return_value, 0);
+		free_envp(envp);
+	}
 	return (return_value);
 }

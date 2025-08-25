@@ -103,9 +103,9 @@ void				add_token(char **tokens, int *count, char *token);
 char				*in_quote(const char *str);
 
 /*---Built-ins---*/
-int					builtin_echo(int argc,  char **argv, char **envp);
+int					builtin_echo(int argc,  char **argv);
 int					builtin_cd(int argc, t_ast *node);
-int					builtin_pwd(int argc,  char **argv, char **envp);
+int					builtin_pwd(int argc);
 int					builtin_export(int argc, t_ast *node);
 int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc,  char **argv, char **envp);

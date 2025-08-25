@@ -14,12 +14,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int	builtin_echo(int argc, char **argv, char **envp)
+int	builtin_echo(int argc, char **argv)
 {
 	int	i;
 	int	write_new_line;
 
-	(void) envp;
 	if (argc == 1)
 	{
 		if (ft_printf("\n") < 0)
@@ -98,12 +97,10 @@ int	builtin_cd(int argc, t_ast *node)
 // PATH_MAX is 4096 according to getconf PATH_MAX,
 // maybe get it from env right here instead of
 // harcoding it
-int	builtin_pwd(int argc,  char **argv, char **envp)
+int	builtin_pwd(int argc)
 {
 	char	cwd_buffer[PATH_MAX];
 
-	(void) argv;
-	(void) envp;
 	if (argc != 1)
 	{
 		ft_printf("pwd : too many arguments\n");

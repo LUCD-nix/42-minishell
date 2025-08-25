@@ -11,7 +11,6 @@
 /* ************************************************************************** */
 #include "../minishell.h"
 
-// TODO : replace all the return (-1) with appropriate error functions
 int	pipe_create(t_ast *writer, t_ast *reader)
 {
 	int	pipe_fd[2];
