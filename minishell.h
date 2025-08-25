@@ -82,7 +82,7 @@ typedef struct s_ast
 	int				fd_out;
 	struct s_ast	*left;
 	struct s_ast	*right;
-	t_env			*env;
+	t_list 			**env;
 }	t_ast;
 
 /*---Debugs utils---*/
@@ -104,7 +104,7 @@ char				*in_quote(const char *str);
 
 /*---Built-ins---*/
 int					builtin_echo(int argc,  char **argv, char **envp);
-int					builtin_cd(int argc,  char **argv, char **envp);
+int					builtin_cd(int argc, t_ast *node);
 int					builtin_pwd(int argc,  char **argv, char **envp);
 int					builtin_export(int argc, t_ast *node);
 int					builtin_unset(int argc, t_ast *node);
@@ -114,7 +114,11 @@ int					builtin_exit(int argc,  char **argv, char **envp);
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);
 t_list				*env_lst_from_str_arr(char **to_copy);
-int					env_remove_key(t_env *env, char *key);
+char				**env_lst_to_str_array(t_list *env);
+char				*env_get(t_list *env, char *key);
+int					env_set(t_list *env, char *key, char *value);
+void				env_delete_key(t_list **head, char *key);
+void				env_free(void *ptr);
 
 /*---Pipes---*/
 int					pipe_create(t_ast *writer, t_ast *reader);

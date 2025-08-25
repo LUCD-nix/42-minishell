@@ -12,9 +12,8 @@
 #include "../minishell.h"
 #include <linux/limits.h>
 #include <stdlib.h>
-//
-// TODO : builtin_* should all return EXIT_SUCCESS EXIT_FAILURE
-//
+#include <unistd.h>
+
 int	builtin_echo(int argc, char **argv, char **envp)
 {
 	int	i;
@@ -45,30 +44,37 @@ int	builtin_echo(int argc, char **argv, char **envp)
 	return (EXIT_SUCCESS);
 }
 
-static int	get_home_dir(char	*buf)
+static int	get_home_dir(char *buf, t_list *env)
 {
 	char *res;
 
-	res = getenv("HOME");
+	res = env_get(env, "HOME");
 	if (res == NULL)
-	{
 		return (1);
-	}
 	ft_strlcpy(buf, res, PATH_MAX);
 	return (0);
 }
 
-int	builtin_cd(int argc, char **argv, char **envp)
+static int	chdir_wrapper(char *to_change, t_list *env)
+{
+	t_list	*cursor;
+	int		res;
+
+	cursor = env;
+	env_set(env, "OLDPWD", getcwd(NULL, 0));
+	res = chdir(to_change);
+	env_set(env, "PWD", getcwd(NULL, 0));
+	return (res);
+}
+
+int	builtin_cd(int argc, t_ast *node)
 {
 	static char	home[PATH_MAX] = { 0 };
+	t_list		*env;
 
-	// TODO : handle cd - to go back to previous location
-	(void) envp;
-	if (!*home)
-	{
-		if (get_home_dir(home) == 1)
-			return (-1);
-	}
+	env = *node->env;
+	if (!*home && get_home_dir(home, env) == 1)
+			return (EXIT_FAILURE);
 	if (argc > 2)
 	{
 		// TODO : implement print to stderror
@@ -78,7 +84,15 @@ int	builtin_cd(int argc, char **argv, char **envp)
 	if (argc == 1)
 		return (chdir(home));
 	else
-		return (chdir(argv[1]));
+	{
+		if (ft_memcmp("-", node->command->args[1], 2) == 0)
+		{
+			if (env_get(env, "OLDPWD") == NULL)
+				return (ft_printf("cd : OLDPWD not set\n"), EXIT_FAILURE);
+			return (chdir_wrapper(env_get(env, "OLDPWD"), env));
+		}
+		return (chdir_wrapper(node->command->args[1], env));
+	}
 }
 
 // PATH_MAX is 4096 according to getconf PATH_MAX,
@@ -126,7 +140,7 @@ int	builtin_env(int argc, char **argv, char **envp)
 	return (EXIT_SUCCESS);
 }
 
-char	*key_from_args(t_ast *node, int i)
+static char	*key_from_args(t_ast *node, int i)
 {
 	int		j;
 	char	*key;
@@ -145,80 +159,56 @@ char	*key_from_args(t_ast *node, int i)
 
 int	builtin_unset(int argc, t_ast *node)
 {
-	t_env	*env_array;
+	t_list **env_lst;
 	char	*key;
 	int		i;
 
-	env_array = node->env;
+	env_lst = node->env;
 	i = 0;
 	while (++i < argc)
 	{
 		key = key_from_args(node, i);
 		if (key == NULL)
 			return (EXIT_FAILURE);
-		env_remove_key(env_array, key);
+		env_delete_key(env_lst, key);
 		free(key);
 	}
 	return (EXIT_SUCCESS);
 }
 
-void	ft_sort_str_tab(char **tab, int size)
+static int	export_no_args(t_ast *node)
 {
-	int		i;
-	int		j;
-	char	*tmp;
+	t_list	*cursor;
+	t_env	temp;
 
-	i = size;
-	while (i >= 0)
+	cursor = *node->env;
+	while (cursor != NULL)
 	{
-		j = 0;
-		while (j < i - 1)
-		{
-			if (ft_strcmp(tab[j], tab[j + 1]) > 0)
-			{
-				tmp = tab[j];
-				tab[j] = tab[j + 1];
-				tab[j + 1] = tmp;
-			}
-			j++;
-		}
-		i--;
+		temp = *(t_env *)cursor->content;
+		if (ft_printf("declare -x %s=\"%s\"\n", temp.key, temp.value) < 0)
+			return (EXIT_FAILURE);
+		cursor = cursor->next;
 	}
-}
-
-int	export_no_args(t_ast *node)
-{
-	t_env	*env;
-	size_t	i;
-
-	env = node->env;
-	ft_sort_str_tab(env->contents, env->size);
-	i = 0;
-	while (i < env->size)
-	{
-		ft_printf("declare -x %s\n", env->contents[i]);
-		i++;
-	}
-	return (0);
+	return (EXIT_SUCCESS);
 }
 
 int	builtin_export(int argc, t_ast *node)
 {
-	t_env	*env_array;
+	t_list	**env_lst;
 	char	*key;
 	int		i;
 
 	if (argc == 1)
 		return (export_no_args(node));
-	env_array = node->env;
+	env_lst = node->env;
 	i = 0;
 	while (++i < argc)
 	{
 		key = key_from_args(node, i);
 		if (!key)
 			return (EXIT_FAILURE);
-		env_remove_key(env_array, key);
-		env_add(env_array, node->command->args[i]);
+		env_delete_key(env_lst, key);
+		env_lst_add(env_lst, node->command->args[i]);
 		free(key);
 	}
 	return (EXIT_SUCCESS);
@@ -228,35 +218,47 @@ int	main(void)
 {
 	extern char **environ;
 
-	t_env *a = env_from_str_arr(environ);
-	t_ast export = {
+	t_list	*a = env_lst_from_str_arr(environ);
+	// t_ast export = {
+	// 	.type = NODE_BUILTIN,
+	// 	.command = &(t_command){
+	// 		.path = "export",
+	// 		.args = (char *[4]) {"export", "TEST1=1", "TEST2=2", NULL},
+	// 	},
+	// 	.env = &a,
+	// };
+	// t_ast unset = {
+	// 	.type = NODE_BUILTIN,
+	// 	.command = &(t_command){
+	// 		.path = "unset",
+	// 		.args = (char *[4]) {"unset", "TEST1=1", "TEST2=2", NULL},
+	// 	},
+	// 	.env = &a,
+	// };
+	t_ast cd = {
 		.type = NODE_BUILTIN,
 		.command = &(t_command){
-			.path = "export",
-			.args = (char *[4]) {"export", "TEST1=1", "TEST2=2", NULL},
+			.path = "cd",
+			.args = (char *[3]) {"cd", "../", NULL},
 		},
-		.env = a,
+		.env = &a,
 	};
-	t_ast unset = {
-		.type = NODE_BUILTIN,
-		.command = &(t_command){
-			.path = "unset",
-			.args = (char *[4]) {"unset", "TEST1=1", "TEST2=2", NULL},
-		},
-		.env = a,
-	};
-	t_ast export_empty = {
-		.type = NODE_BUILTIN,
-		.command = &(t_command){
-			.path = "export",
-			.args = (char *[2]) {"export", NULL},
-		},
-		.env = a,
-	};
-	builtin_export(3, &export);
-	builtin_export(1, &export_empty);
-	builtin_unset(3, &unset);
-	builtin_export(1, &export_empty);
-	free(a);
+	// t_ast export_empty = {
+	// 	.type = NODE_BUILTIN,
+	// 	.command = &(t_command){
+	// 		.path = "export",
+	// 		.args = (char *[2]) {"export", NULL},
+	// 	},
+	// 	.env = &a,
+	// };
+	ft_printf("=================================================\n");
+	ft_printf("=================================================\n");
+	ft_printf("\n\n");
+	ft_printf("cd status = %d, OLDPWD = %s PWD = %s\n", builtin_cd(2, &cd), env_get(a, "OLDPWD"), env_get(a, "PWD"));
+	ft_printf("=================================================\n");
+	ft_printf("=================================================\n");
+	ft_printf("\n\n");
+	ft_printf("cd status = %d, OLDPWD = %s PWD = %s\n", builtin_cd(2, &cd), env_get(a, "OLDPWD"), env_get(a, "PWD"));
+	ft_lstclear(&a, &env_free);
 	return (0);
 }
