@@ -100,32 +100,40 @@ int	traverse_node(t_ast *node)
 // 		.fd_in = STDIN_FILENO,
 // 		.fd_out = STDOUT_FILENO,
 // 	};
-// 	t_ast	file1 = {
-// 		.type = NODE_FILE,
-// 		.filename = "file1",
+// 	t_ast	wcc = {
+// 		.type = NODE_CMD,
+// 		.command = &(t_command) {
+// 			.path = "/usr/bin/wc",
+// 			.args = (char *[3]) {"wc", "-c", NULL},
+// 		},
+// 		.env = &env,
 // 		.fd_in = STDIN_FILENO,
 // 		.fd_out = STDOUT_FILENO,
 // 	};
-// 	t_ast	file2 = {
-// 		.type = NODE_FILE,
-// 		.filename = "file2",
+// 	t_ast	factor = {
+// 		.type = NODE_CMD,
+// 		.command = &(t_command) {
+// 			.path = "/usr/bin/factor",
+// 			.args = (char *[2]) {"factor", NULL},
+// 		},
+// 		.env = &env,
 // 		.fd_in = STDIN_FILENO,
 // 		.fd_out = STDOUT_FILENO,
 // 	};
-// 	t_ast	redir1 = {
-// 		.type = NODE_OUT,
+// 	t_ast pipe1 = {
+// 		.type = NODE_PIPE,
 // 		.fd_in = STDIN_FILENO,
 // 		.fd_out = STDOUT_FILENO,
 // 		.left = &lsla,
-// 		.right = &file1,
+// 		.right = &wcc,
 // 	};
-// 	t_ast	redir2 = {
-// 		.type = NODE_OUT,
+// 	t_ast pipe2  = {
+// 		.type = NODE_PIPE,
 // 		.fd_in = STDIN_FILENO,
 // 		.fd_out = STDOUT_FILENO,
-// 		.left = &redir1,
-// 		.right = &file2,
+// 		.left = &pipe1,
+// 		.right = &factor,
 // 	};
-// 	traverse_node(&redir2);
+// 	traverse_node(&pipe2);
 // 	ft_lstclear(&env, env_free);
 // }

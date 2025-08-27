@@ -68,17 +68,17 @@ int	traverse_pipe(t_ast *node)
 		return (-1);
 	if (pid_left == CHILD_PID)
 		exit(traverse_node(node->left));
+	if (close(node->left->fd_out) == -1)
+		return (-1);
 	pid_right = fork();
 	if (pid_right == -1)
 		return (-1);
 	if (pid_right == CHILD_PID)
 		exit(traverse_node(node->right));
-	waitpid(pid_left, NULL, 0);
-	if (close(node->left->fd_out) == -1)
-		return (-1);
-	waitpid(pid_right, &res, 0);
 	if (close(node->right->fd_in) == -1)
 		return (-1);
+	waitpid(pid_left, NULL, 0);
+	waitpid(pid_right, &res, 0);
 	return (res);
 }
 

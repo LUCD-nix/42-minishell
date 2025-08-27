@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../minishell.h"
+#include <stdlib.h>
 
 int	builtin_echo(int argc, char **argv)
 {
