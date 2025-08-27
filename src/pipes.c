@@ -29,7 +29,6 @@ void	pipe_propagate_fd(t_ast *node)
 	node->left->fd_in = node->fd_in;
 	node->right->fd_out = node->fd_out;
 }
-
 // int	pipe_from_file(char *file)
 // {
 // 	int		file_fd;
@@ -46,4 +45,3 @@ void	pipe_propagate_fd(t_ast *node)
 // 		return (-1);
 // 	return (pipe_fd[PIPE_OUT]);
 // }
-

@@ -63,20 +63,6 @@ int	traverse_redir(t_ast *node)
 	return (res);
 }
 
-void	redir_propagate_fd(t_ast *node)
-{
-	if (node->type == NODE_IN)
-	{
-		node->right->fd_in = node->fd_in;
-		node->left->fd_out = node->fd_out;
-	}
-	else
-	{
-		node->left->fd_in = node->fd_in;
-		node->right->fd_out = node->fd_out;
-	}
-}
-
 int	traverse_node(t_ast *node)
 {
 	int			res;
@@ -97,43 +83,49 @@ int	traverse_node(t_ast *node)
 		res = traverse_andor(node, type);
 	return (res);
 }
-
-int main(void)
-{
-	t_ast	cate = {
-		.type = NODE_CMD,
-		.command = &(t_command) {
-			.path = "/usr/bin/cat",
-			.args = (char *[3]) {"cat", "-e", NULL},
-		},
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-	};
-	t_ast	file1 = {
-		.type = NODE_FILE,
-		.filename = "file1",
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-	};
-	t_ast	file2 = {
-		.type = NODE_FILE,
-		.filename = "file2",
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-	};
-	t_ast	redir1 = {
-		.type = NODE_IN,
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-		.left = &cate,
-		.right = &file1,
-	};
-	t_ast	redir2 = {
-		.type = NODE_IN,
-		.fd_in = STDIN_FILENO,
-		.fd_out = STDOUT_FILENO,
-		.left = &redir1,
-		.right = &file2,
-	};
-	traverse_node(&redir2);
-}
+//
+// int main(void)
+// {
+// 	extern char **environ;
+//
+// 	t_list *env = env_lst_from_str_arr(environ);
+//
+// 	t_ast	lsla = {
+// 		.type = NODE_CMD,
+// 		.command = &(t_command) {
+// 			.path = "/usr/bin/ls",
+// 			.args = (char *[3]) {"ls", "-la", NULL},
+// 		},
+// 		.env = &env,
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 	};
+// 	t_ast	file1 = {
+// 		.type = NODE_FILE,
+// 		.filename = "file1",
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 	};
+// 	t_ast	file2 = {
+// 		.type = NODE_FILE,
+// 		.filename = "file2",
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 	};
+// 	t_ast	redir1 = {
+// 		.type = NODE_OUT,
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 		.left = &lsla,
+// 		.right = &file1,
+// 	};
+// 	t_ast	redir2 = {
+// 		.type = NODE_OUT,
+// 		.fd_in = STDIN_FILENO,
+// 		.fd_out = STDOUT_FILENO,
+// 		.left = &redir1,
+// 		.right = &file2,
+// 	};
+// 	traverse_node(&redir2);
+// 	ft_lstclear(&env, env_free);
+// }

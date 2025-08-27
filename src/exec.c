@@ -47,6 +47,7 @@ int	exec_builtin(t_ast *node)
 		res = builtin_unset(argc, node);
 	else if (!ft_memcmp(node->command->path, "env", 4))
 		res = (builtin_env(argc, argv, envp));
+	// TODO :
 	// if (!ft_memcmp(node->command->path, "exit", 5))
 	// 	return(builtin_exit(argc, argv, envp));
 	free_envp(envp);
@@ -68,10 +69,10 @@ int	exec_process(t_ast *process)
 	{
 		if (process->fd_in != STDIN_FILENO
 			&& dup2(process->fd_in, STDIN_FILENO) == -1)
-				return (-1);
+			return (-1);
 		if (process->fd_out != STDOUT_FILENO
-			 && dup2(process->fd_out, STDOUT_FILENO) == -1)
-				return (-1);
+			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
+			return (-1);
 		execve(process->command->path, process->command->args, envp);
 	}
 	else
