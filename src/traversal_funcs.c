@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../minishell.h"
+#include <sys/types.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 {
@@ -54,16 +55,28 @@ int	traverse_builtin(t_ast *node)
 
 int	traverse_pipe(t_ast *node)
 {
-	int	res;
+	int		res;
+	pid_t	pid_left;
+	pid_t	pid_right;
 
 	res = -1;
 	pipe_propagate_fd(node);
 	if (pipe_create(node->left, node->right) == -1)
 		return (-1);
-	traverse_node(node->left);
+	pid_left = fork();
+	if (pid_left == -1)
+		return (-1);
+	if (pid_left == CHILD_PID)
+		exit(traverse_node(node->left));
+	pid_right = fork();
+	if (pid_right == -1)
+		return (-1);
+	if (pid_right == CHILD_PID)
+		exit(traverse_node(node->right));
+	waitpid(pid_left, NULL, 0);
 	if (close(node->left->fd_out) == -1)
 		return (-1);
-	res = traverse_node(node->right);
+	waitpid(pid_right, &res, 0);
 	if (close(node->right->fd_in) == -1)
 		return (-1);
 	return (res);
