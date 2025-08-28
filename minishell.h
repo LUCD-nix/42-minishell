@@ -150,7 +150,7 @@ int					builtin_pwd(int argc);
 int					builtin_export(int argc, t_ast *node);
 int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc,  char **argv, char **envp);
-int					builtin_exit(int argc,  char **argv, char **envp);
+// int					builtin_exit(int argc,  char **argv, char **envp);
 
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);
@@ -195,8 +195,8 @@ void			error(t_parser *parser, char *message);
 int				at_end(t_parser *parser);
 
 /* Environment */
-char			*get_env_value(char *key, char **envp);
-char			*expand_variables(char *value, char **envp, int last_status, t_quote_type quote);
+char			*get_env_value(char *key, t_list *envp);
+char			*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote);
 void			print_tokens(t_token *tokens);
 
 /* Utils */

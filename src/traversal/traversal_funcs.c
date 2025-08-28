@@ -6,11 +6,10 @@
 /*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/20 10:57:47 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/08/20 10:57:50 by lucorrei         ###   ########.fr       */
+/*   Updated: 2025/08/28 15:25:52 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <sys/types.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 {

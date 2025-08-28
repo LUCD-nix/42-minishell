@@ -57,7 +57,7 @@ static char	**copy_envp(char **envp)
 	return (new_envp);
 }
 
-static void	expand_tokens(t_token *tokens, char **envp, int last_status)
+static void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 {
 	t_token	*tmp;
 	char	*expanded;
@@ -124,7 +124,7 @@ static void	print_ast(t_ast *ast, int depth)
 	print_ast(ast->right, depth + 1);
 }
 
-static int	process_line(char *line, char **envp, int *last_status)
+static int	process_line(char *line, t_list *envp, int *last_status)
 {
 	t_lexeme	*lexemes;
 	t_token		*tokens;
@@ -163,13 +163,13 @@ static int	process_line(char *line, char **envp, int *last_status)
 int	main(int argc, char **argv, char **envp)
 {
 	char	*line;
-	char	**my_envp;
+	t_list	*my_envp;
 	int		last_status;
 
 	(void)argc;
 	(void)argv;
 	setup_signals();
-	my_envp = copy_envp(envp);
+	my_envp = env_lst_from_str_arr(envp);
 	if (!my_envp)
 		return (printf("Error: Failed to copy environment\n"), 1);
 	last_status = 0;
@@ -195,7 +195,7 @@ int	main(int argc, char **argv, char **envp)
 			break ;
 		free(line);
 	}
-	ft_free_tab(my_envp);
+	ft_lstclear(&my_envp, &env_free);
 	rl_clear_history();
 	printf("Goodbye!\n");
 	return (last_status);

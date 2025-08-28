@@ -11,17 +11,17 @@
 /* ************************************************************************** */
 #include "../../minishell.h"
 
-void	free_envp(char **envp)
-{
-// TODO : this is also needed to free args in command struct, should reuse
-	int	i;
-
-	i = -1;
-	while (envp[++i] != NULL)
-		free(envp[i]);
-	free(envp);
-}
-
+// void	free_envp(char **envp)
+// {
+// // TODO : this is also needed to free args in command struct, should reuse
+// 	int	i;
+//
+// 	i = -1;
+// 	while (envp[++i] != NULL)
+// 		free(envp[i]);
+// 	free(envp);
+// }
+//
 int	exec_builtin(t_ast *node)
 {
 	int		argc;
@@ -50,7 +50,7 @@ int	exec_builtin(t_ast *node)
 	// TODO :
 	// if (!ft_memcmp(node->command->path, "exit", 5))
 	// 	return(builtin_exit(argc, argv, envp));
-	free_envp(envp);
+	ft_free_tab(envp);
 	return (-1);
 }
 
@@ -78,7 +78,7 @@ int	exec_process(t_ast *process)
 	else
 	{
 		waitpid(pid, &return_value, 0);
-		free_envp(envp);
+		ft_free_tab(envp);
 	}
 	return (return_value);
 }

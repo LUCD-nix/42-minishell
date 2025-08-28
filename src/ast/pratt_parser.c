@@ -9,7 +9,7 @@ t_precedence	get_precedence(t_token_type type)
 	if (type == T_PIPE)
 		return (PREC_PIPE);
 	if (type == T_REDIR_IN || type == T_REDIR_OUT
-		|| type == T_APPEND || type == T_HEREDOC)
+			|| type == T_APPEND || type == T_HEREDOC)
 		return (PREC_REDIR);
 	return (PREC_NONE);
 }
