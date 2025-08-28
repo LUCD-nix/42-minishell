@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../../minishell.h"
 
 t_ast	*init_ast_node(t_node_type type)
 {

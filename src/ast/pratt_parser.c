@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../../minishell.h"
 
 t_precedence	get_precedence(t_token_type type)
 {

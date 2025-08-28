@@ -1,6 +1,13 @@
 NAME = minishell
 
-CFILES := $(wildcard src/*.c)
+CFILES := src/ast/ast.c \
+	src/ast/parser.c \
+	src/ast/pratt_parser.c \
+	src/envp/envp.c \
+	src/lexer/lexer.c \
+	src/token/token.c \
+	src/token/utils.c \
+	src/main.c
 
 OBJS := $(CFILES:.c=.o)
 

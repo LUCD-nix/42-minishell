@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "../../minishell.h"
 
 static t_ast	*parse_binary(t_parser *parser, t_ast *left, t_token_type op)
 {
