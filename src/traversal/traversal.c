@@ -9,7 +9,7 @@
 /*   Updated: 2025/08/04 16:25:40 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../minishell.h"
+#include "../../minishell.h"
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -26,7 +26,7 @@ void	andor_propagate_fd(t_ast *node)
 
 void	redir_propagate_fd(t_ast *node)
 {
-	if (node->type == NODE_IN)
+	if (node->type == NODE_REDIR_IN)
 	{
 		node->right->fd_in = node->fd_in;
 		node->left->fd_out = node->fd_out;
@@ -45,16 +45,16 @@ int	traverse_redir(t_ast *node)
 	int	res;
 
 	redir_propagate_fd(node);
-	if (node->type == NODE_IN)
+	if (node->type == NODE_REDIR_IN)
 		o_flags = O_RDONLY;
-	else if (node->type == NODE_OUT)
+	else if (node->type == NODE_REDIR_OUT)
 		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
 	else
 		o_flags = O_WRONLY | O_CREAT | O_APPEND;
 	file_fd = traverse_file(node->right, o_flags);
 	if (file_fd == -1)
 		return (-1);
-	if (node->type == NODE_IN)
+	if (node->type == NODE_REDIR_IN)
 		node->left->fd_in = file_fd;
 	else
 		node->left->fd_out = file_fd;
@@ -77,7 +77,8 @@ int	traverse_node(t_ast *node)
 		res = traverse_builtin(node);
 	else if (type == NODE_PIPE)
 		res = traverse_pipe(node);
-	else if (type == NODE_IN || type == NODE_OUT || type == NODE_APPEND)
+	else if (type == NODE_REDIR_IN
+			|| type == NODE_REDIR_OUT || type == NODE_APPEND)
 		res = traverse_redir(node);
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);

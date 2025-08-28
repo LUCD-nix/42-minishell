@@ -9,7 +9,7 @@
 /*   Updated: 2025/08/04 16:25:40 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../minishell.h"
+#include "../../minishell.h"
 
 void	free_envp(char **envp)
 {

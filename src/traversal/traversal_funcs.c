@@ -9,7 +9,7 @@
 /*   Updated: 2025/08/20 10:57:50 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../minishell.h"
+#include "../../minishell.h"
 #include <sys/types.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)

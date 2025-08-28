@@ -9,7 +9,7 @@
 /*   Updated: 2025/08/27 10:31:36 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../minishell.h"
+#include "../../minishell.h"
 
 static char	*key_from_args(t_ast *node, int i)
 {

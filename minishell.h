@@ -94,17 +94,17 @@ typedef struct s_command
 
 typedef struct s_redir
 {
-<<<<<<< HEAD
-	char	*key;
-	char	*value;
-}	t_env;
-=======
 	t_node_type		type;
 	char			*filename;
 	int				fd;
 	struct s_redir	*next;
 }	t_redir;
->>>>>>> master
+
+typedef struct s_env
+{
+	char	*key;
+	char	*value;
+}	t_env;
 
 typedef struct s_ast
 {

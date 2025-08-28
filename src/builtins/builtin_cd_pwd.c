@@ -9,7 +9,7 @@
 /*   Updated: 2025/08/27 10:28:21 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../minishell.h"
+#include "../../minishell.h"
 
 static int	get_home_dir(char *buf, t_list *env)
 {

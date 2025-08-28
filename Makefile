@@ -13,7 +13,6 @@ CFILES = src/ast/ast.c \
 	src/lexer/lexer.c \
 	src/main.c \
 	src/pipes/pipes.c \
-	src/pipes/redirects.c \
 	src/token/token.c \
 	src/token/utils.c \
 	src/traversal/traversal.c \

@@ -9,7 +9,7 @@
 /*   Updated: 2025/08/27 10:43:22 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../minishell.h"
+#include "../../minishell.h"
 #include <stdlib.h>
 
 int	builtin_echo(int argc, char **argv)
@@ -87,7 +87,7 @@ int	builtin_env(int argc, char **argv, char **envp)
 // 		.type = NODE_BUILTIN,
 // 		.command = &(t_command){
 // 			.path = "cd",
-// 			.args = (char *[3]) {"cd", "../", NULL},
+// 			.args = (char *[3]) {"cd", "../../", NULL},
 // 		},
 // 		.env = &a,
 // 	};
