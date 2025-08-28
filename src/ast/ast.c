@@ -11,8 +11,9 @@
 /* ************************************************************************** */
 
 #include "../../minishell.h"
+#include <unistd.h>
 
-t_ast	*init_ast_node(t_node_type type)
+t_ast	*init_ast_node(t_node_type type, t_list **env)
 {
 	t_ast	*ast;
 
@@ -22,18 +23,19 @@ t_ast	*init_ast_node(t_node_type type)
 	ast->type = type;
 	ast->command = NULL;
 	ast->filename = NULL;
-	ast->fd_in = -1;
-	ast->fd_out = -1;
+	ast->fd_in = STDIN_FILENO;
+	ast->fd_out = STDOUT_FILENO;
+	ast->env = env;
 	ast->left = NULL;
 	ast->right = NULL;
 	return (ast);
 }
 
-t_ast	*init_cmd_node(t_command *cmd)
+t_ast	*init_cmd_node(t_command *cmd, t_list **env)
 {
 	t_ast	*ast;
 
-	ast = init_ast_node(NODE_CMD);
+	ast = init_ast_node(NODE_CMD, env);
 	if (!ast)
 		return (NULL);
 	ast->command = cmd;

@@ -12,7 +12,8 @@
 
 #include "../../minishell.h"
 
-static t_ast	*parse_binary(t_parser *parser, t_ast *left, t_token_type op)
+static t_ast	*parse_binary(t_parser *parser, t_ast *left, t_token_type op,
+						t_list **env)
 {
 	t_ast		*node;
 	t_node_type	node_type;
@@ -25,17 +26,17 @@ static t_ast	*parse_binary(t_parser *parser, t_ast *left, t_token_type op)
 		node_type = NODE_OR;
 	else
 		return (error(parser, "Unknown binary operator"), left);
-	node = init_ast_node(node_type);
+	node = init_ast_node(node_type, env);
 	if (!node)
 		return (error(parser, "Memory allocation failed"), left);
 	node->left = left;
-	node->right = parse_expression(parser, get_precedence(op) + 1);
+	node->right = parse_expression(parser, get_precedence(op) + 1, env);
 	if (!node->right)
 		return (free_ast(node), NULL);
 	return (node);
 }
 
-static t_ast	*parse_redirection(t_parser *parser, t_ast *left)
+static t_ast	*parse_redirection(t_parser *parser, t_ast *left, t_list **env)
 {
 	t_token_type	redir_type;
 	t_ast			*redir_node;
@@ -45,13 +46,13 @@ static t_ast	*parse_redirection(t_parser *parser, t_ast *left)
 	if (!check(parser, T_WORD))
 		return (error(parser, "Expected filename after redirection"), left);
 	if (redir_type == T_REDIR_IN)
-		redir_node = init_ast_node(NODE_REDIR_IN);
+		redir_node = init_ast_node(NODE_REDIR_IN, env);
 	else if (redir_type == T_REDIR_OUT)
-		redir_node = init_ast_node(NODE_REDIR_OUT);
+		redir_node = init_ast_node(NODE_REDIR_OUT, env);
 	else if (redir_type == T_APPEND)
-		redir_node = init_ast_node(NODE_APPEND);
+		redir_node = init_ast_node(NODE_APPEND, env);
 	else if (redir_type == T_HEREDOC)
-		redir_node = init_ast_node(NODE_HEREDOC);
+		redir_node = init_ast_node(NODE_HEREDOC, env);
 	else
 		return (error(parser, "Unknown redirection type"), left);
 	if (!redir_node)
@@ -64,12 +65,13 @@ static t_ast	*parse_redirection(t_parser *parser, t_ast *left)
 	return (redir_node);
 }
 
-t_ast	*parse_expression(t_parser *parser, t_precedence precedence)
+t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
+						t_list **env)
 {
 	t_ast			*left;
 	t_token_type	op_type;
 
-	left = parse_primary(parser);
+	left = parse_primary(parser, env);
 	if (!left)
 		return (NULL);
 	while (!at_end(parser) && precedence <= get_precedence(parser->current->type))
@@ -78,12 +80,12 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence)
 		if (op_type == T_REDIR_IN || op_type == T_REDIR_OUT
 			|| op_type == T_APPEND || op_type == T_HEREDOC)
 		{
-			left = parse_redirection(parser, left);
+			left = parse_redirection(parser, left, env);
 		}
 		else if (op_type == T_PIPE || op_type == T_AND || op_type == T_OR)
 		{
 			advance(parser);
-			left = parse_binary(parser, left, op_type);
+			left = parse_binary(parser, left, op_type, env);
 		}
 		else
 		{
@@ -95,25 +97,25 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence)
 	return (left);
 }
 
-t_ast	*parse_primary(t_parser *parser)
+t_ast	*parse_primary(t_parser *parser, t_list **env)
 {
 	if (check(parser, T_LPAREN))
-		return (parse_subshell(parser));
+		return (parse_subshell(parser, env));
 	if (check(parser, T_WORD))
-		return (parse_command(parser));
+		return (parse_command(parser, env));
 	error(parser, "Expected command or '('");
 	return (NULL);
 }
 
-t_ast	*parse_subshell(t_parser *parser)
+t_ast	*parse_subshell(t_parser *parser, t_list **env)
 {
 	t_ast	*node;
 
 	advance(parser);
-	node = init_ast_node(NODE_SUBSHELL);
+	node = init_ast_node(NODE_SUBSHELL, env);
 	if (!node)
 		return (error(parser, "Memory allocation failed"), NULL);
-	node->left = parse_expression(parser, PREC_NONE);
+	node->left = parse_expression(parser, PREC_NONE, env);
 	if (!node->left)
 	{
 		error(parser, "Expected expression in subshell");
@@ -173,7 +175,7 @@ static char	**collect_args(t_parser *parser, int *count)
 	return (args);
 }
 
-t_ast	*parse_command(t_parser *parser)
+t_ast	*parse_command(t_parser *parser, t_list **env)
 {
 	char		**args;
 	int			argc;
@@ -187,13 +189,13 @@ t_ast	*parse_command(t_parser *parser)
 	ft_free_tab(args);
 	if (!cmd)
 		return (error(parser, "Memory allocation failed"), NULL);
-	node = init_cmd_node(cmd);
+	node = init_cmd_node(cmd, env);
 	if (!node)
 		return (free_cmd(cmd), error(parser, "Memory allocation failed"), NULL);
 	return (node);
 }
 
-t_ast	*parse(t_token *tokens)
+t_ast	*parse(t_token *tokens, t_list **env)
 {
 	t_parser	parser;
 	t_ast		*result;
@@ -203,7 +205,7 @@ t_ast	*parse(t_token *tokens)
 	parser.had_error = 0;
 	if (at_end(&parser))
 		return (NULL);
-	result = parse_expression(&parser, PREC_NONE);
+	result = parse_expression(&parser, PREC_NONE, env);
 	if (parser.had_error || !at_end(&parser))
 	{
 		if (result)

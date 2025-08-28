@@ -51,7 +51,6 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 		val = ft_strdup("");
 	new_res = ft_strjoin(res, val);
 	free(key);
-	free(val);
 	free(res);
 	return (new_res);
 }

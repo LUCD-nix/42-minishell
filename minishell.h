@@ -137,8 +137,8 @@ t_token			*lexer_to_token(t_lexeme *lex);
 t_token_type	get_token_type(char *token);
 
 /* AST */
-t_ast			*init_ast_node(t_node_type type);
-t_ast			*init_cmd_node(t_command *cmd);
+t_ast			*init_ast_node(t_node_type type, t_list **env);
+t_ast			*init_cmd_node(t_command *cmd, t_list **env);
 void			free_ast(t_ast *ast);
 void			free_cmd(t_command *cmd);
 t_command		*init_cmd(char **args);
@@ -179,11 +179,12 @@ int					exec_process(t_ast *command);
 int					exec_builtin(t_ast *builtin);
 
 /* Pratt Parser */
-t_ast			*parse(t_token *tokens);
-t_ast			*parse_expression(t_parser *parser, t_precedence precedence);
-t_ast			*parse_primary(t_parser *parser);
-t_ast			*parse_command(t_parser *parser);
-t_ast			*parse_subshell(t_parser *parser);
+t_ast			*parse(t_token *tokens, t_list **env);
+t_ast			*parse_expression(t_parser *parser, t_precedence precedence,
+	t_list **env);
+t_ast			*parse_primary(t_parser *parser, t_list **env);
+t_ast			*parse_command(t_parser *parser, t_list **env);
+t_ast			*parse_subshell(t_parser *parser, t_list **env);
 t_precedence	get_precedence(t_token_type type);
 int				is_builtin(char *value);
 
@@ -197,8 +198,8 @@ int				at_end(t_parser *parser);
 /* Environment */
 char			*get_env_value(char *key, t_list *envp);
 char			*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote);
-void			print_tokens(t_token *tokens);
-
+// void			print_tokens(t_token *tokens);
+//
 /* Utils */
 void			ft_free_tab(char **tab);
 void			*ft_realloc(void *ptr, size_t size);

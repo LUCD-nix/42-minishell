@@ -30,12 +30,12 @@ CFLAGS = -Wall -Wextra -Werror -ggdb3
 
 LFLAGS := -I${LIBFTDIR} -lreadline -lhistory
 
-all: ${NAME}
+all: ${NAME} 
 
 ${NAME}:  ${OBJS} ${LIBFT}
 	${CC} ${OBJS} ${LIBFT} ${LFLAGS} -o ${NAME}
 
-%.o: %.c
+%.o: %.c minishell.h
 	${CC} -c ${CFLAGS} $< -o $@
 
 ${LIBFT}:
