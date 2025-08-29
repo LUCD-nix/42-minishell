@@ -94,6 +94,7 @@ int	traverse_node(t_ast *node)
 	int			res;
 	t_node_type	type;
 
+	// TODO : Heredoc
 	res = -1;
 	type = node->type;
 	if (type == NODE_CMD)
