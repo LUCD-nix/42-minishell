@@ -63,11 +63,11 @@ static int	exec_get_path(t_ast *node)
 		path_to_elf = ft_strjoin_free_first(path_to_elf, node->command->path);
 		if (access(path_to_elf, X_OK) == 0)
 		{
-			ft_free_tab(path_dirs);
 			free(node->command->path);
 			node->command->path = path_to_elf;
-			return (0);
+			return (ft_free_tab(path_dirs), 0);
 		}
+		free(path_to_elf);
 	}
 	return (ft_free_tab(path_dirs), perror("Error : program not in PATH"), -1);
 }
