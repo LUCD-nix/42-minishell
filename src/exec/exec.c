@@ -11,17 +11,6 @@
 /* ************************************************************************** */
 #include "../../minishell.h"
 
-// void	free_envp(char **envp)
-// {
-// // TODO : this is also needed to free args in command struct, should reuse
-// 	int	i;
-//
-// 	i = -1;
-// 	while (envp[++i] != NULL)
-// 		free(envp[i]);
-// 	free(envp);
-// }
-//
 int	exec_builtin(t_ast *node)
 {
 	int		argc;
@@ -51,7 +40,36 @@ int	exec_builtin(t_ast *node)
 	// if (!ft_memcmp(node->command->path, "exit", 5))
 	// 	return(builtin_exit(argc, argv, envp));
 	ft_free_tab(envp);
-	return (res);;
+	return (res);
+}
+
+static int	exec_get_path(t_ast *node)
+{
+	char	**path_dirs;
+	char	*path;
+	char	*path_to_elf;
+	int		i;
+
+	path = env_get(*node->env, "PATH");
+	if (path == NULL)
+		return (perror("minishell : no defined PATH\n"),-1);
+	path_dirs = ft_split(path, ':');
+	if (path_dirs == NULL)
+		return (perror("minishell, split error in PATH\n"),-1);
+	i = -1;
+	while (path_dirs[++i])
+	{
+		path_to_elf = ft_strjoin(path_dirs[i], "/");
+		path_to_elf = ft_strjoin_free_first(path_to_elf, node->command->path);
+		if (access(path_to_elf, X_OK) == 0)
+		{
+			ft_free_tab(path_dirs);
+			free(node->command->path);
+			node->command->path = path_to_elf;
+			return (0);
+		}
+	}
+	return (ft_free_tab(path_dirs), perror("Error : program not in PATH"), -1);
 }
 
 int	exec_process(t_ast *process)
@@ -65,6 +83,8 @@ int	exec_process(t_ast *process)
 	if (pid == -1)
 		return (-1);
 	envp = env_lst_to_str_array(*process->env);
+	if (exec_get_path(process) == -1)
+		return (-1);
 	if (pid == CHILD_PID)
 	{
 		if (process->fd_in != STDIN_FILENO
@@ -75,10 +95,7 @@ int	exec_process(t_ast *process)
 			return (-1);
 		execve(process->command->path, process->command->args, envp);
 	}
-	else
-	{
-		waitpid(pid, &return_value, 0);
-		ft_free_tab(envp);
-	}
+	waitpid(pid, &return_value, 0);
+	ft_free_tab(envp);
 	return (return_value);
 }
