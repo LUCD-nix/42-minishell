@@ -60,7 +60,7 @@ int	exec_process(t_ast *process)
 	int			return_value;
 	char		**envp;
 
-	return_value = -1;
+	return_value = 0;
 	pid = fork();
 	if (pid == -1)
 		return (-1);
@@ -78,6 +78,8 @@ int	exec_process(t_ast *process)
 	else
 	{
 		waitpid(pid, &return_value, 0);
+		while (!WIFEXITED(return_value) && !WIFSIGNALED(return_value))
+			waitpid(pid, &return_value, 0);
 		ft_free_tab(envp);
 	}
 	return (return_value);
