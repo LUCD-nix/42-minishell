@@ -63,6 +63,32 @@ int	traverse_redir(t_ast *node)
 	return (res);
 }
 
+int	traverse_heredoc(t_ast *node)
+{
+	int		tmp_file;
+	char	*line;
+	int		delim_len;
+
+	delim_len = ft_strlen(node->filename);
+	tmp_file = open("tmp_file_for_heredoc", O_CREAT | O_TRUNC | O_RDWR);
+	node->left->fd_in = tmp_file;
+	if (tmp_file == -1)
+		return (-1);
+	line = get_next_line(STDIN_FILENO);
+	while (ft_strncmp(line, node->filename, delim_len + 1) != '\n')
+	{
+		if (line == NULL)
+			return (-1);
+		write(tmp_file, line, ft_strlen(line));
+		free(line);
+		line = get_next_line(STDIN_FILENO);
+	}
+	traverse_node(node->left);
+	if (close(tmp_file) == -1 || unlink("tmp_file_for_heredoc") == -1)
+		return (-1);
+	return (0);
+}
+
 int	traverse_node(t_ast *node)
 {
 	int			res;
@@ -82,6 +108,8 @@ int	traverse_node(t_ast *node)
 		res = traverse_redir(node);
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);
+	else if (type == NODE_HEREDOC)
+		res = traverse_heredoc(node);
 	return (res);
 }
 //
