@@ -24,13 +24,12 @@ static int	get_home_dir(char *buf, t_list *env)
 
 static int	chdir_wrapper(char *to_change, t_list *env)
 {
-	t_list	*cursor;
 	int		res;
 
-	cursor = env;
 	env_set(env, "OLDPWD", getcwd(NULL, 0));
 	res = chdir(to_change);
-	env_set(env, "PWD", getcwd(NULL, 0));
+	if (res == 0)
+		env_set(env, "PWD", to_change);
 	return (res);
 }
 
@@ -56,7 +55,7 @@ int	builtin_cd(int argc, t_ast *node)
 		{
 			if (env_get(env, "OLDPWD") == NULL)
 				return (ft_printf("cd : OLDPWD not set\n"), EXIT_FAILURE);
-			return (chdir_wrapper(env_get(env, "OLDPWD"), env));
+			return (chdir_wrapper(ft_strdup(env_get(env, "OLDPWD")), env));
 		}
 		return (chdir_wrapper(node->command->args[1], env));
 	}

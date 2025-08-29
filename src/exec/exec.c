@@ -51,7 +51,7 @@ int	exec_builtin(t_ast *node)
 	// if (!ft_memcmp(node->command->path, "exit", 5))
 	// 	return(builtin_exit(argc, argv, envp));
 	ft_free_tab(envp);
-	return (-1);
+	return (res);;
 }
 
 int	exec_process(t_ast *process)
