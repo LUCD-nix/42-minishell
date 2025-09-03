@@ -9,8 +9,14 @@
 /*   Updated: 2025/08/27 10:48:28 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+/* ************************************************************************** */
+/*   Correction pour env_init_append.c                                       */
+/* ************************************************************************** */
+
 #include "../../minishell.h"
 
+// Version corrigée qui vérifie la validité du format
 t_env	env_from_str(char *str)
 {
 	int		key_len;
@@ -18,35 +24,64 @@ t_env	env_from_str(char *str)
 	char	*key;
 	char	*value;
 
-	// TODO : temp, ensure that export, e.g, TEST="$USER" is expanded correctly
+	if (!str)
+		return ((t_env){.key = NULL, .value = NULL});
+		
 	cursor = ft_strchr(str, '=');
 	if (cursor == NULL)
 	{
+		// Pas de '=' - créer une variable sans valeur
 		key = ft_strdup(str);
-		value = ft_calloc(1, 1);
+		value = ft_strdup(""); // Valeur vide mais la variable existe
 		return ((t_env){.key = key, .value = value});
 	}
+	
 	key_len = cursor - str;
+	if (key_len <= 0)
+	{
+		// Format invalide (commence par '=')
+		return ((t_env){.key = NULL, .value = NULL});
+	}
+	
 	key = ft_calloc(key_len + 1, sizeof(char));
+	if (!key)
+		return ((t_env){.key = NULL, .value = NULL});
+		
 	ft_strlcpy(key, str, key_len + 1);
-	cursor++;
-	value = ft_calloc(ft_strlen(cursor) + 1, sizeof(char));
-	ft_strlcpy(value, cursor, ft_strlen(cursor) + 1);
+	cursor++; // Passer le '='
+	
+	value = ft_strdup(cursor);
+	if (!value)
+	{
+		free(key);
+		return ((t_env){.key = NULL, .value = NULL});
+	}
+	
 	return ((t_env){.key = key, .value = value});
 }
 
 t_list	*env_lst_add(t_list **lst, char *str)
 {
 	t_env	*tmp;
+	t_env	env_entry;
 
+	env_entry = env_from_str(str);
+	if (!env_entry.key) // Vérifier si la création a échoué
+		return (*lst);
+		
 	tmp = ft_calloc(1, sizeof(t_env));
 	if (tmp == NULL)
+	{
+		free(env_entry.key);
+		free(env_entry.value);
 		return (NULL);
-	*tmp = env_from_str(str);
+	}
+	*tmp = env_entry;
 	ft_lstadd_back(lst, ft_lstnew(tmp));
 	return (*lst);
 }
 
+// Les autres fonctions restent identiques...
 t_list	*env_lst_from_str_arr(char **to_copy)
 {
 	t_list	*res;

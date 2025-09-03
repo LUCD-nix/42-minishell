@@ -6,16 +6,11 @@
 /*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 16:25:38 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/08/04 16:25:40 by lucorrei         ###   ########.fr       */
+/*   Updated: 2025/09/03 16:25:40 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <fcntl.h>
-#include <unistd.h>
 
-// TODO : replace all the return (-1) with appropriate error functions
-// TODO: (a | b && c | d) < file does not propagate file to "c"
-// in BASH, and it does here, needs more testing
 void	andor_propagate_fd(t_ast *node)
 {
 	node->left->fd_in = node->fd_in;
@@ -24,40 +19,261 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
-void	redir_propagate_fd(t_ast *node)
+static int	count_redirections(t_ast *node)
 {
-	if (node->type == NODE_REDIR_IN)
+	int	count = 0;
+	t_ast *current = node;
+
+	while (current && (current->type == NODE_REDIR_IN || 
+			current->type == NODE_REDIR_OUT || 
+			current->type == NODE_APPEND || 
+			current->type == NODE_HEREDOC))
 	{
-		node->right->fd_in = node->fd_in;
-		node->left->fd_out = node->fd_out;
+		count++;
+		current = current->left;
 	}
+	return (count);
+}
+
+int	create_heredoc_fd(t_ast *node)
+{
+	int		tmp_file;
+	char	*line;
+	size_t	delim_len;
+	char	*temp_filename;
+	char	*pid_str;
+	char	*counter_str;
+	static int heredoc_counter = 0;
+
+	// Créer un nom de fichier unique pour éviter les conflits
+	pid_str = ft_itoa(getpid());
+	counter_str = ft_itoa(heredoc_counter++);
+	if (!pid_str || !counter_str)
+	{
+		free(pid_str);
+		free(counter_str);
+		return (-1);
+	}
+	
+	temp_filename = ft_strjoin("/tmp/minishell_heredoc_", pid_str);
+	if (temp_filename)
+	{
+		char *temp = ft_strjoin(temp_filename, "_");
+		free(temp_filename);
+		temp_filename = temp;
+		if (temp_filename)
+		{
+			temp = ft_strjoin(temp_filename, counter_str);
+			free(temp_filename);
+			temp_filename = temp;
+		}
+	}
+	
+	free(pid_str);
+	free(counter_str);
+	
+	if (!temp_filename)
+		return (-1);
+
+	delim_len = ft_strlen(node->filename);
+	tmp_file = open(temp_filename, O_CREAT | O_TRUNC | O_RDWR, 0600);
+	if (tmp_file == -1)
+	{
+		perror("minishell: heredoc tmp file");
+		free(temp_filename);
+		return (-1);
+	}
+	
+	printf("heredoc> ");
+	line = get_next_line(STDIN_FILENO);
+	while (line)
+	{
+		// Vérifier si on a atteint le délimiteur
+		if (ft_strlen(line) == delim_len + 1 && 
+			ft_strncmp(line, node->filename, delim_len) == 0 && 
+			line[delim_len] == '\n')
+		{
+			free(line);
+			break;
+		}
+		
+		write(tmp_file, line, ft_strlen(line));
+		free(line);
+		printf("heredoc> ");
+		line = get_next_line(STDIN_FILENO);
+	}
+	
+	// Repositionner au début du fichier pour la lecture
+	if (lseek(tmp_file, 0, SEEK_SET) == -1)
+	{
+		perror("minishell: lseek heredoc");
+		close(tmp_file);
+		unlink(temp_filename);
+		free(temp_filename);
+		return (-1);
+	}
+	
+	// Note: le fichier sera supprimé quand le fd sera fermé
+	unlink(temp_filename);
+	free(temp_filename);
+	return (tmp_file);
+}
+
+static int	setup_input_redirection(t_ast *node)
+{
+	int	fd;
+
+	if (node->type == NODE_HEREDOC)
+	{
+		// Gérer heredoc directement
+		return (create_heredoc_fd(node));
+	}
+	else if (node->type == NODE_REDIR_IN)
+	{
+		fd = open(node->filename, O_RDONLY);
+		if (fd == -1)
+		{
+			perror("minishell: input redirection");
+			return (-1);
+		}
+		return (fd);
+	}
+	return (-2); // Pas une redirection d'entrée
+}
+
+static int	setup_output_redirection(t_ast *node)
+{
+	int	fd;
+	int	flags;
+
+	if (node->type == NODE_REDIR_OUT)
+		flags = O_WRONLY | O_CREAT | O_TRUNC;
+	else if (node->type == NODE_APPEND)
+		flags = O_WRONLY | O_CREAT | O_APPEND;
 	else
+		return (-2); // Pas une redirection de sortie
+
+	fd = open(node->filename, flags, 0644);
+	if (fd == -1)
 	{
-		node->left->fd_in = node->fd_in;
-		node->right->fd_out = node->fd_out;
+		perror("minishell: output redirection");
+		return (-1);
 	}
+	return (fd);
+}
+
+int	traverse_multiple_redirections(t_ast *node)
+{
+	int		input_fd = -2;  // -2 = pas de redirection, -1 = erreur, >=0 = fd valide
+	int		output_fd = -2;
+	t_ast	*current = node;
+	int		res;
+	int		temp_fd;
+
+	// Parcourir toutes les redirections pour trouver les dernières valides
+	while (current && (current->type == NODE_REDIR_IN || 
+			current->type == NODE_REDIR_OUT || 
+			current->type == NODE_APPEND || 
+			current->type == NODE_HEREDOC))
+	{
+		if (current->type == NODE_REDIR_IN || current->type == NODE_HEREDOC)
+		{
+			// Fermer l'ancien fd d'entrée s'il existe
+			if (input_fd >= 0)
+				close(input_fd);
+			temp_fd = setup_input_redirection(current);
+			if (temp_fd == -1)
+			{
+				if (output_fd >= 0)
+					close(output_fd);
+				return (-1);
+			}
+			if (temp_fd >= 0)
+				input_fd = temp_fd;
+		}
+		else // Redirection de sortie
+		{
+			// Fermer l'ancien fd de sortie s'il existe
+			if (output_fd >= 0)
+				close(output_fd);
+			temp_fd = setup_output_redirection(current);
+			if (temp_fd == -1)
+			{
+				if (input_fd >= 0)
+					close(input_fd);
+				return (-1);
+			}
+			if (temp_fd >= 0)
+				output_fd = temp_fd;
+		}
+		current = current->left;
+	}
+
+	// current devrait maintenant pointer vers la commande
+	if (!current)
+	{
+		if (input_fd >= 0)
+			close(input_fd);
+		if (output_fd >= 0)
+			close(output_fd);
+		return (-1);
+	}
+
+	// Propager les fd du parent et assigner les nouveaux fd
+	current->fd_in = (input_fd >= 0) ? input_fd : node->fd_in;
+	current->fd_out = (output_fd >= 0) ? output_fd : node->fd_out;
+
+	// Exécuter la commande
+	res = traverse_node(current);
+
+	// Nettoyer les fd
+	if (input_fd >= 0)
+		close(input_fd);
+	if (output_fd >= 0)
+		close(output_fd);
+
+	return (res);
 }
 
 int	traverse_redir(t_ast *node)
 {
+	int	redir_count;
+
+	// Compter les redirections imbriquées
+	redir_count = count_redirections(node);
+	
+	if (redir_count > 1)
+		return (traverse_multiple_redirections(node));
+	
+	// Redirection simple - méthode originale optimisée
 	int	file_fd;
 	int	o_flags;
 	int	res;
 
-	redir_propagate_fd(node);
 	if (node->type == NODE_REDIR_IN)
 		o_flags = O_RDONLY;
 	else if (node->type == NODE_REDIR_OUT)
 		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
-	else
+	else // NODE_APPEND
 		o_flags = O_WRONLY | O_CREAT | O_APPEND;
-	file_fd = traverse_file(node->right, o_flags);
+	
+	file_fd = open(node->filename, o_flags, 0644);
 	if (file_fd == -1)
+	{
+		perror("minishell: redirection");
 		return (-1);
+	}
+
+	// Propager les fd du parent
+	node->left->fd_in = node->fd_in;
+	node->left->fd_out = node->fd_out;
+	
+	// Assigner le nouveau fd
 	if (node->type == NODE_REDIR_IN)
 		node->left->fd_in = file_fd;
 	else
 		node->left->fd_out = file_fd;
+	
 	res = traverse_node(node->left);
 	close(file_fd);
 	return (res);
@@ -65,28 +281,49 @@ int	traverse_redir(t_ast *node)
 
 int	traverse_heredoc(t_ast *node)
 {
-	int		tmp_file;
-	char	*line;
-	int		delim_len;
+	int		heredoc_fd;
+	int		res;
 
-	delim_len = ft_strlen(node->filename);
-	tmp_file = open("tmp_file_for_heredoc", O_CREAT | O_TRUNC | O_RDWR);
-	node->left->fd_in = tmp_file;
-	if (tmp_file == -1)
+	heredoc_fd = create_heredoc_fd(node);
+	if (heredoc_fd == -1)
 		return (-1);
-	line = get_next_line(STDIN_FILENO);
-	while (ft_strncmp(line, node->filename, delim_len + 1) != '\n')
+	
+	// Propager les fd et rediriger l'entrée
+	node->left->fd_in = heredoc_fd;
+	node->left->fd_out = node->fd_out;
+	
+	res = traverse_node(node->left);
+	close(heredoc_fd);
+	return (res);
+}
+
+int	traverse_subshell(t_ast *node)
+{
+	pid_t	pid;
+	int		status;
+	int		res;
+
+	pid = fork();
+	if (pid == -1)
+		return (perror("minishell: fork"), -1);
+	
+	if (pid == 0)
 	{
-		if (line == NULL)
-			return (-1);
-		write(tmp_file, line, ft_strlen(line));
-		free(line);
-		line = get_next_line(STDIN_FILENO);
+		// Dans le processus enfant
+		if (node->fd_in != STDIN_FILENO && dup2(node->fd_in, STDIN_FILENO) == -1)
+			exit(1);
+		if (node->fd_out != STDOUT_FILENO && dup2(node->fd_out, STDOUT_FILENO) == -1)
+			exit(1);
+		
+		res = traverse_node(node->left);
+		exit(res);
 	}
-	traverse_node(node->left);
-	if (close(tmp_file) == -1 || unlink("tmp_file_for_heredoc") == -1)
-		return (-1);
-	return (0);
+	
+	// Dans le processus parent
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
+	return (-1);
 }
 
 int	traverse_node(t_ast *node)
@@ -94,74 +331,26 @@ int	traverse_node(t_ast *node)
 	int			res;
 	t_node_type	type;
 
+	if (!node)
+		return (-1);
+		
 	res = -1;
 	type = node->type;
+	
 	if (type == NODE_CMD)
 		res = exec_process(node);
 	else if (type == NODE_BUILTIN)
 		res = traverse_builtin(node);
 	else if (type == NODE_PIPE)
 		res = traverse_pipe(node);
-	else if (type == NODE_REDIR_IN
-			|| type == NODE_REDIR_OUT || type == NODE_APPEND)
+	else if (type == NODE_REDIR_IN || type == NODE_REDIR_OUT || type == NODE_APPEND)
 		res = traverse_redir(node);
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);
 	else if (type == NODE_HEREDOC)
 		res = traverse_heredoc(node);
+	else if (type == NODE_SUBSHELL)
+		res = traverse_subshell(node);
+		
 	return (res);
 }
-//
-// int main(void)
-// {
-// 	extern char **environ;
-//
-// 	t_list *env = env_lst_from_str_arr(environ);
-//
-// 	t_ast	lsla = {
-// 		.type = NODE_CMD,
-// 		.command = &(t_command) {
-// 			.path = "/usr/bin/ls",
-// 			.args = (char *[3]) {"ls", "-la", NULL},
-// 		},
-// 		.env = &env,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 	};
-// 	t_ast	wcc = {
-// 		.type = NODE_CMD,
-// 		.command = &(t_command) {
-// 			.path = "/usr/bin/wc",
-// 			.args = (char *[3]) {"wc", "-c", NULL},
-// 		},
-// 		.env = &env,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 	};
-// 	t_ast	factor = {
-// 		.type = NODE_CMD,
-// 		.command = &(t_command) {
-// 			.path = "/usr/bin/factor",
-// 			.args = (char *[2]) {"factor", NULL},
-// 		},
-// 		.env = &env,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 	};
-// 	t_ast pipe1 = {
-// 		.type = NODE_PIPE,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 		.left = &lsla,
-// 		.right = &wcc,
-// 	};
-// 	t_ast pipe2  = {
-// 		.type = NODE_PIPE,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 		.left = &pipe1,
-// 		.right = &factor,
-// 	};
-// 	traverse_node(&pipe2);
-// 	ft_lstclear(&env, env_free);
-// }

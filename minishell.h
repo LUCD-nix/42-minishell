@@ -173,6 +173,8 @@ int					traverse_pipe(t_ast *node);
 int					traverse_builtin(t_ast *node);
 int					traverse_andor(t_ast *node, t_node_type type);
 void				andor_propagate_fd(t_ast *node);
+int					traverse_heredoc(t_ast *node);
+int					create_heredoc_fd(t_ast *node);
 
 /*---Execution---*/
 int					exec_process(t_ast *command);

@@ -34,20 +34,24 @@ int	traverse_builtin(t_ast *node)
 	int	saved_out;
 	int	res;
 
-	saved_in = 0;
-	saved_out = 0;
+	saved_in = -1;
+	saved_out = -1;
 	if (traverse_redirect_builtin(node, &saved_in, &saved_out) == -1)
 		return (-1);
 	res = exec_builtin(node);
-	if (node->fd_in != STDIN_FILENO)
+	
+	// Restaurer les fd originaux
+	if (saved_in != -1)
 	{
 		if (dup2(saved_in, STDIN_FILENO) == -1)
 			return (-1);
+		close(saved_in);
 	}
-	if (node->fd_out != STDOUT_FILENO)
+	if (saved_out != -1)
 	{
 		if (dup2(saved_out, STDOUT_FILENO) == -1)
 			return (-1);
+		close(saved_out);
 	}
 	return (res);
 }
@@ -93,27 +97,11 @@ int	traverse_andor(t_ast *node, t_node_type type)
 		if (res == EXIT_SUCCESS)
 			res = traverse_node(node->right);
 	}
-	// TODO : untested (NODE_OR)
-	else
+	else // NODE_OR
 	{
-		if (res == EXIT_FAILURE)
+		if (res != EXIT_SUCCESS)
 			res = traverse_node(node->right);
 	}
 	return (res);
 }
 
-int	traverse_file(t_ast *node, int flags)
-{
-	int	file_fd;
-
-	file_fd = open(node->filename, flags, 0644);
-	if (file_fd == -1)
-		return (-1);
-	if (node->fd_in != STDIN_FILENO
-		&& dup2(node->fd_in, file_fd) == -1)
-		return (-1);
-	if (node->fd_out != STDOUT_FILENO
-		&& dup2(node->fd_out, file_fd) == -1)
-		return (-1);
-	return (file_fd);
-}

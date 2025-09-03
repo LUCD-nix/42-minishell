@@ -29,7 +29,7 @@ static char	*expand_status(char *res, int *i, int last_status)
 	new_res = ft_strjoin(res, status);
 	free(status);
 	free(res);
-	(*i)++;
+	(*i) += 2; // FIX: on a lu "$?", donc avancer de 2
 	return (new_res);
 }
 
@@ -39,6 +39,7 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 	char	*key;
 	char	*val;
 	char	*new_res;
+	int		need_free_val = 0;
 
 	start = *i;
 	while (ft_isalnum(value[*i]) || value[*i] == '_')
@@ -48,9 +49,14 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 		return (res);
 	val = env_get(env, key);
 	if (!val)
-		val = ft_strdup("");
+	{
+		val = ft_strdup(""); // FIX: marquer pour libération
+		need_free_val = 1;
+	}
 	new_res = ft_strjoin(res, val);
 	free(key);
+	if (need_free_val) // FIX: libérer si on a alloué
+		free(val);
 	free(res);
 	return (new_res);
 }

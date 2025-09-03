@@ -11,6 +11,27 @@
 /* ************************************************************************** */
 #include "../../minishell.h"
 
+// Fonction pour valider un nom de variable selon POSIX
+static int	is_valid_identifier(char *str)
+{
+	int	i;
+
+	if (!str || !str[0])
+		return (0);
+	// Premier caractère doit être une lettre ou underscore
+	if (!ft_isalpha(str[0]) && str[0] != '_')
+		return (0);
+	// Autres caractères doivent être alphanumériques ou underscore
+	i = 1;
+	while (str[i] && str[i] != '=')
+	{
+		if (!ft_isalnum(str[i]) && str[i] != '_')
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
 static char	*key_from_args(t_ast *node, int i)
 {
 	int		j;
@@ -38,6 +59,13 @@ int	builtin_unset(int argc, t_ast *node)
 	i = 0;
 	while (++i < argc)
 	{
+		// Validation du nom de variable
+		if (!is_valid_identifier(node->command->args[i]))
+		{
+			ft_printf("minishell: unset: `%s': not a valid identifier\n", 
+					node->command->args[i]);
+			continue;
+		}
 		key = key_from_args(node, i);
 		if (key == NULL)
 			return (EXIT_FAILURE);
@@ -68,6 +96,7 @@ int	builtin_export(int argc, t_ast *node)
 	t_list	**env_lst;
 	char	*key;
 	int		i;
+	int		has_equals;
 
 	if (argc == 1)
 		return (export_no_args(node));
@@ -75,11 +104,43 @@ int	builtin_export(int argc, t_ast *node)
 	i = 0;
 	while (++i < argc)
 	{
+		// Vérifier si l'argument contient un '='
+		has_equals = (ft_strchr(node->command->args[i], '=') != NULL);
+		
+		// Validation du nom de variable
+		if (!is_valid_identifier(node->command->args[i]))
+		{
+			ft_printf("minishell: export: `%s': not a valid identifier\n", 
+					node->command->args[i]);
+			continue;
+		}
+		
 		key = key_from_args(node, i);
 		if (!key)
 			return (EXIT_FAILURE);
-		env_delete_key(env_lst, key);
-		env_lst_add(env_lst, node->command->args[i]);
+			
+		// Si pas de '=', on fait juste declare sans assigner de valeur
+		if (!has_equals)
+		{
+			// Vérifier si la variable existe déjà
+			if (env_get(*env_lst, key) == NULL)
+			{
+				// Créer une variable vide (exported mais sans valeur)
+				char *empty_var = ft_strjoin(key, "=");
+				if (empty_var)
+				{
+					env_lst_add(env_lst, empty_var);
+					free(empty_var);
+				}
+			}
+			// Si elle existe déjà, ne rien faire (juste l'exporter)
+		}
+		else
+		{
+			// Avec '=', supprimer l'ancienne et ajouter la nouvelle
+			env_delete_key(env_lst, key);
+			env_lst_add(env_lst, node->command->args[i]);
+		}
 		free(key);
 	}
 	return (EXIT_SUCCESS);

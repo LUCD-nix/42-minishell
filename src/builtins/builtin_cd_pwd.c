@@ -25,13 +25,27 @@ static int	get_home_dir(char *buf, t_list *env)
 static int	chdir_wrapper(char *to_change, t_list *env)
 {
 	int		res;
+	char	*old_pwd;
 
-	env_set(env, "OLDPWD", getcwd(NULL, 0));
+	old_pwd = getcwd(NULL, 0); // FIX: stocker pour libérer
+	if (old_pwd)
+	{
+		env_set(env, "OLDPWD", old_pwd);
+		free(old_pwd); // FIX: libérer la mémoire
+	}
 	res = chdir(to_change);
 	if (res == 0)
-		env_set(env, "PWD", to_change);
+	{
+		char *new_pwd = getcwd(NULL, 0);
+		if (new_pwd)
+		{
+			env_set(env, "PWD", new_pwd);
+			free(new_pwd); // FIX: libérer aussi
+		}
+	}
 	return (res);
 }
+
 
 int	builtin_cd(int argc, t_ast *node)
 {

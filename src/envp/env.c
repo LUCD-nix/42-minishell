@@ -78,8 +78,8 @@ int	env_set(t_list *env, char *key, char *value)
 		if (ft_memcmp(key, temp->key, key_len + 1) == 0)
 		{
 			free(temp->value);
-			temp->value = value;
-			return (0);
+			temp->value = ft_strdup(value); // FIX: copier au lieu d'assigner
+			return (temp->value ? 0 : -1);
 		}
 		cursor = cursor->next;
 	}

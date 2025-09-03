@@ -52,24 +52,43 @@ static int	exec_get_path(t_ast *node)
 
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
-		return (perror("minishell : no defined PATH\n"),-1);
+	{
+		perror("minishell: no defined PATH"); // FIX: perror séparé
+		return (-1);
+	}
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
-		return (perror("minishell, split error in PATH\n"),-1);
+	{
+		perror("minishell: split error in PATH"); // FIX: perror séparé  
+		return (-1);
+	}
 	i = -1;
 	while (path_dirs[++i])
 	{
 		path_to_elf = ft_strjoin(path_dirs[i], "/");
+		if (!path_to_elf)
+		{
+			ft_free_tab(path_dirs);
+			return (-1);
+		}
 		path_to_elf = ft_strjoin_free_first(path_to_elf, node->command->path);
+		if (!path_to_elf)
+		{
+			ft_free_tab(path_dirs);
+			return (-1);
+		}
 		if (access(path_to_elf, X_OK) == 0)
 		{
 			free(node->command->path);
 			node->command->path = path_to_elf;
-			return (ft_free_tab(path_dirs), 0);
+			ft_free_tab(path_dirs);
+			return (0);
 		}
 		free(path_to_elf);
 	}
-	return (ft_free_tab(path_dirs), perror("Error : program not in PATH"), -1);
+	ft_free_tab(path_dirs);
+	perror("Error: program not in PATH"); // FIX: perror séparé
+	return (-1);
 }
 
 int	exec_process(t_ast *process)

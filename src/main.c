@@ -115,6 +115,6 @@ int	main(int argc, char **argv, char **envp)
 	}
 	ft_lstclear(&my_envp, &env_free);
 	rl_clear_history();
-	printf("Goodbye!\n");
+	printf("exit\n");
 	return (last_status);
 }
