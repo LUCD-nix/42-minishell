@@ -218,7 +218,7 @@ int	traverse_multiple_redirections(t_ast *node)
 	current->fd_in = (input_fd >= 0) ? input_fd : node->fd_in;
 	current->fd_out = (output_fd >= 0) ? output_fd : node->fd_out;
 
-	res = traverse_node(current);
+	res = traverse_node_new(current);
 
 	if (input_fd >= 0)
 		close(input_fd);
@@ -267,7 +267,7 @@ int	traverse_redir(t_ast *node)
 	else
 		node->left->fd_out = file_fd;
 	
-	res = traverse_node(node->left);
+	res = traverse_node_new(node->left);
 	close(file_fd);
 	return (res);
 }
@@ -285,16 +285,49 @@ int	traverse_heredoc(t_ast *node)
 	node->left->fd_in = heredoc_fd;
 	node->left->fd_out = node->fd_out;
 	
-	res = traverse_node(node->left);
+	res = traverse_node_new(node->left);
 	close(heredoc_fd);
 	return (res);
 }
 
-int	traverse_subshell(t_ast *node)
+int	traverse_subshell_new(t_ast *node)
 {
 	pid_t	pid;
 	int		status;
-	int		res;
+	int		input_fd;
+	int		output_fd;
+
+	// Préparer les fd pour le subshell
+	input_fd = node->fd_in;
+	output_fd = node->fd_out;
+	
+	// Gérer les redirections du subshell
+	if (node->input_file)
+	{
+		input_fd = open(node->input_file, O_RDONLY);
+		if (input_fd == -1)
+		{
+			perror("minishell: input redirection");
+			return (1);
+		}
+	}
+	else if (node->heredoc_fd >= 0)
+	{
+		input_fd = node->heredoc_fd;
+	}
+	
+	if (node->output_file)
+	{
+		int flags = O_WRONLY | O_CREAT | (node->append_mode ? O_APPEND : O_TRUNC);
+		output_fd = open(node->output_file, flags, 0644);
+		if (output_fd == -1)
+		{
+			if (node->input_file && input_fd >= 0)
+				close(input_fd);
+			perror("minishell: output redirection");
+			return (1);
+		}
+	}
 
 	pid = fork();
 	if (pid == -1)
@@ -303,16 +336,21 @@ int	traverse_subshell(t_ast *node)
 	if (pid == 0)
 	{
 		// Dans le processus enfant
-		if (node->fd_in != STDIN_FILENO && dup2(node->fd_in, STDIN_FILENO) == -1)
+		if (input_fd != STDIN_FILENO && dup2(input_fd, STDIN_FILENO) == -1)
 			exit(1);
-		if (node->fd_out != STDOUT_FILENO && dup2(node->fd_out, STDOUT_FILENO) == -1)
+		if (output_fd != STDOUT_FILENO && dup2(output_fd, STDOUT_FILENO) == -1)
 			exit(1);
 		
-		res = traverse_node(node->left);
-		exit(res);
+		exit(traverse_node_new(node->left));
 	}
 	
-	// Dans le processus parent
+	// Nettoyer les fd dans le parent
+	if (node->input_file && input_fd >= 0)
+		close(input_fd);
+	if (node->output_file && output_fd >= 0)
+		close(output_fd);
+	
+	// Attendre le processus enfant
 	waitpid(pid, &status, 0);
 	if (WIFEXITED(status))
 		return (WEXITSTATUS(status));
@@ -376,7 +414,7 @@ int	traverse_command_simple(t_ast *node)
 	return (res);
 }
 
-int	traverse_node(t_ast *node)
+int	traverse_node_new(t_ast *node)
 {
 	int			res;
 	t_node_type	type;
@@ -406,7 +444,7 @@ int	traverse_node(t_ast *node)
 	else if (type == NODE_HEREDOC)
 		res = traverse_heredoc(node);  // Pour compatibilité
 	else if (type == NODE_SUBSHELL)
-		res = traverse_subshell(node);
+		res = traverse_subshell_new(node);  // NOUVEAU
 		
 	return (res);
 }

@@ -29,48 +29,19 @@ static t_ast	*parse_binary(t_parser *parser, t_ast *left, t_token_type op,
 	if (!node)
 		return (error(parser, "Memory allocation failed"), left);
 	node->left = left;
-	node->right = parse_expression(parser, get_precedence(op) + 1, env);
+	node->right = parse_expression_bash_compatible(parser, get_precedence(op) + 1, env);
 	if (!node->right)
 		return (free_ast(node), NULL);
 	return (node);
 }
 
-static t_ast	*create_redirection_node(t_parser *parser, t_token_type redir_type, t_list **env)
-{
-	t_ast	*redir_node;
-
-	if (redir_type == T_REDIR_IN)
-		redir_node = init_ast_node(NODE_REDIR_IN, env);
-	else if (redir_type == T_REDIR_OUT)
-		redir_node = init_ast_node(NODE_REDIR_OUT, env);
-	else if (redir_type == T_APPEND)
-		redir_node = init_ast_node(NODE_APPEND, env);
-	else if (redir_type == T_HEREDOC)
-		redir_node = init_ast_node(NODE_HEREDOC, env);
-	else
-		return (error(parser, "Unknown redirection type"), NULL);
-
-	if (!redir_node)
-		return (error(parser, "Memory allocation failed"), NULL);
-
-	if (!check(parser, T_WORD))
-		return (free_ast(redir_node), error(parser, "Expected filename after redirection"), NULL);
-
-	redir_node->filename = ft_strdup(parser->current->value);
-	if (!redir_node->filename)
-		return (free_ast(redir_node), error(parser, "Memory allocation failed"), NULL);
-
-	advance(parser);
-	return (redir_node);
-}
-
-t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
+t_ast	*parse_expression_bash_compatible(t_parser *parser, t_precedence precedence,
 						t_list **env)
 {
 	t_ast			*left;
 	t_token_type	op_type;
 
-	left = parse_primary(parser, env);
+	left = parse_primary_bash_compatible(parser, env);
 	if (!left)
 		return (NULL);
 	
@@ -100,20 +71,21 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 	return (left);
 }
 
-t_ast	*parse_primary(t_parser *parser, t_list **env)
+t_ast	*parse_primary_bash_compatible(t_parser *parser, t_list **env)
 {
 	if (check(parser, T_LPAREN))
-		return (parse_subshell(parser, env));
+		return (parse_subshell_bash_compatible(parser, env));
 	if (check(parser, T_WORD))
-		return (parse_command(parser, env));
+		return (parse_command_bash_compatible(parser, env));
 	error(parser, "Expected command or '('");
 	return (NULL);
 }
 
-
-static int	handle_output_redirection(t_parser *parser, t_ast *cmd)
+static int	handle_output_redirection_bash_compatible(t_parser *parser, t_ast *cmd)
 {
 	t_token_type	redir_type;
+	int				temp_fd;
+	int				flags;
 
 	redir_type = parser->current->type;
 	advance(parser);
@@ -124,6 +96,16 @@ static int	handle_output_redirection(t_parser *parser, t_ast *cmd)
 		return (-1);
 	}
 	
+	// NOUVEAU: Créer/tronquer le fichier comme bash le fait
+	flags = O_WRONLY | O_CREAT | ((redir_type == T_APPEND) ? O_APPEND : O_TRUNC);
+	temp_fd = open(parser->current->value, flags, 0644);
+	if (temp_fd == -1)
+	{
+		perror("minishell: output redirection");
+		return (-1);
+	}
+	close(temp_fd); // IMPORTANT: Fermer immédiatement comme bash
+	
 	// Libérer l'ancien fichier de sortie s'il existe
 	if (cmd->output_file)
 	{
@@ -131,7 +113,7 @@ static int	handle_output_redirection(t_parser *parser, t_ast *cmd)
 		cmd->output_file = NULL;
 	}
 	
-	// Assigner le nouveau fichier de sortie
+	// Assigner le nouveau fichier de sortie (seul le dernier sera utilisé)
 	cmd->output_file = ft_strdup(parser->current->value);
 	if (!cmd->output_file)
 	{
@@ -146,65 +128,10 @@ static int	handle_output_redirection(t_parser *parser, t_ast *cmd)
 	return (0);
 }
 
-static int	apply_redirections_to_subshell(t_parser *parser, t_ast *subshell)
+static int	handle_input_redirection_bash_compatible(t_parser *parser, t_ast *cmd)
 {
-	while (!at_end(parser) && (parser->current->type == T_REDIR_IN || 
-			parser->current->type == T_REDIR_OUT || 
-			parser->current->type == T_APPEND || 
-			parser->current->type == T_HEREDOC))
-	{
-		if (parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND)
-		{
-			if (handle_output_redirection(parser, subshell) == -1)
-				return (-1);
-		}
-		else if (parser->current->type == T_REDIR_IN)
-		{
-			if (handle_input_redirection(parser, subshell) == -1)
-				return (-1);
-		}
-		else if (parser->current->type == T_HEREDOC)
-		{
-			if (handle_heredoc(parser, subshell) == -1)
-				return (-1);
-		}
-	}
-	return (0);
-}
+	int	temp_fd;
 
-t_ast	*parse_subshell(t_parser *parser, t_list **env)
-{
-	t_ast	*node;
-
-	advance(parser); // Passer '('
-	
-	node = init_ast_node(NODE_SUBSHELL, env);
-	if (!node)
-		return (error(parser, "Memory allocation failed"), NULL);
-	
-	node->left = parse_expression(parser, PREC_NONE, env);
-	if (!node->left)
-	{
-		error(parser, "Expected expression in subshell");
-		return (free_ast(node), NULL);
-	}
-	
-	if (!check(parser, T_RPAREN))
-	{
-		error(parser, "Expected ')' after subshell");
-		return (free_ast(node), NULL);
-	}
-	advance(parser); // Passer ')'
-	
-	// NOUVEAU: Appliquer les redirections au subshell
-	if (apply_redirections_to_subshell(parser, node) == -1)
-		return (free_ast(node), NULL);
-	
-	return (node);
-}
-
-static int	handle_input_redirection(t_parser *parser, t_ast *cmd)
-{
 	advance(parser);
 	
 	if (!check(parser, T_WORD))
@@ -213,6 +140,15 @@ static int	handle_input_redirection(t_parser *parser, t_ast *cmd)
 		return (-1);
 	}
 	
+	// NOUVEAU: Vérifier que le fichier existe et est lisible
+	temp_fd = open(parser->current->value, O_RDONLY);
+	if (temp_fd == -1)
+	{
+		perror("minishell: input redirection");
+		return (-1);
+	}
+	close(temp_fd); // Fermer immédiatement
+	
 	// Libérer l'ancien fichier d'entrée s'il existe
 	if (cmd->input_file)
 	{
@@ -220,7 +156,7 @@ static int	handle_input_redirection(t_parser *parser, t_ast *cmd)
 		cmd->input_file = NULL;
 	}
 	
-	// Assigner le nouveau fichier d'entrée
+	// Assigner le nouveau fichier d'entrée (seul le dernier sera utilisé)
 	cmd->input_file = ft_strdup(parser->current->value);
 	if (!cmd->input_file)
 	{
@@ -232,7 +168,7 @@ static int	handle_input_redirection(t_parser *parser, t_ast *cmd)
 	return (0);
 }
 
-static int	handle_heredoc(t_parser *parser, t_ast *cmd)
+static int	handle_heredoc_new(t_parser *parser, t_ast *cmd)
 {
 	char	*delimiter;
 	char	*line;
@@ -284,6 +220,63 @@ static int	handle_heredoc(t_parser *parser, t_ast *cmd)
 	
 	cmd->heredoc_fd = pipe_fd[0];
 	return (0);
+}
+
+static int	apply_redirections_to_subshell_bash_compatible(t_parser *parser, t_ast *subshell)
+{
+	while (!at_end(parser) && (parser->current->type == T_REDIR_IN || 
+			parser->current->type == T_REDIR_OUT || 
+			parser->current->type == T_APPEND || 
+			parser->current->type == T_HEREDOC))
+	{
+		if (parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND)
+		{
+			if (handle_output_redirection_bash_compatible(parser, subshell) == -1)
+				return (-1);
+		}
+		else if (parser->current->type == T_REDIR_IN)
+		{
+			if (handle_input_redirection_bash_compatible(parser, subshell) == -1)
+				return (-1);
+		}
+		else if (parser->current->type == T_HEREDOC)
+		{
+			if (handle_heredoc_new(parser, subshell) == -1)
+				return (-1);
+		}
+	}
+	return (0);
+}
+
+t_ast	*parse_subshell_bash_compatible(t_parser *parser, t_list **env)
+{
+	t_ast	*node;
+
+	advance(parser); // Passer '('
+	
+	node = init_ast_node(NODE_SUBSHELL, env);
+	if (!node)
+		return (error(parser, "Memory allocation failed"), NULL);
+	
+	node->left = parse_expression_bash_compatible(parser, PREC_NONE, env);
+	if (!node->left)
+	{
+		error(parser, "Expected expression in subshell");
+		return (free_ast(node), NULL);
+	}
+	
+	if (!check(parser, T_RPAREN))
+	{
+		error(parser, "Expected ')' after subshell");
+		return (free_ast(node), NULL);
+	}
+	advance(parser); // Passer ')'
+	
+	// NOUVEAU: Appliquer les redirections au subshell
+	if (apply_redirections_to_subshell_bash_compatible(parser, node) == -1)
+		return (free_ast(node), NULL);
+	
+	return (node);
 }
 
 static char	**collect_args(t_parser *parser, int *count)
@@ -342,7 +335,7 @@ static char	**collect_args(t_parser *parser, int *count)
 	return (args);
 }
 
-t_ast	*parse_command(t_parser *parser, t_list **env)
+t_ast	*parse_command_bash_compatible(t_parser *parser, t_list **env)
 {
 	char		**args;
 	int			argc;
@@ -363,7 +356,7 @@ t_ast	*parse_command(t_parser *parser, t_list **env)
 	if (!node)
 		return (free_cmd(cmd), error(parser, "Memory allocation failed"), NULL);
 	
-	// NOUVEAU: Traiter toutes les redirections en séquence
+	// NOUVEAU: Traiter toutes les redirections en créant tous les fichiers
 	while (!at_end(parser) && (parser->current->type == T_REDIR_IN || 
 			parser->current->type == T_REDIR_OUT || 
 			parser->current->type == T_APPEND || 
@@ -371,17 +364,17 @@ t_ast	*parse_command(t_parser *parser, t_list **env)
 	{
 		if (parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND)
 		{
-			if (handle_output_redirection(parser, node) == -1)
+			if (handle_output_redirection_bash_compatible(parser, node) == -1)
 				return (free_ast(node), NULL);
 		}
 		else if (parser->current->type == T_REDIR_IN)
 		{
-			if (handle_input_redirection(parser, node) == -1)
+			if (handle_input_redirection_bash_compatible(parser, node) == -1)
 				return (free_ast(node), NULL);
 		}
 		else if (parser->current->type == T_HEREDOC)
 		{
-			if (handle_heredoc(parser, node) == -1)
+			if (handle_heredoc_new(parser, node) == -1)
 				return (free_ast(node), NULL);
 		}
 	}
@@ -389,8 +382,7 @@ t_ast	*parse_command(t_parser *parser, t_list **env)
 	return (node);
 }
 
-
-t_ast	*parse(t_token *tokens, t_list **env)
+t_ast	*parse_new(t_token *tokens, t_list **env)
 {
 	t_parser	parser;
 	t_ast		*result;
@@ -400,7 +392,7 @@ t_ast	*parse(t_token *tokens, t_list **env)
 	parser.had_error = 0;
 	if (at_end(&parser))
 		return (NULL);
-	result = parse_expression(&parser, PREC_NONE, env);
+	result = parse_expression_bash_compatible(&parser, PREC_NONE, env);
 	if (parser.had_error || !at_end(&parser))
 	{
 		if (result)

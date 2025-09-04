@@ -24,7 +24,7 @@ static void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 	}
 }
 
-static int	process_line(char *line, t_list **envp, int *last_status)
+static int	process_line_new(char *line, t_list **envp, int *last_status)
 {
 	t_lexeme	*lexemes;
 	t_token		*tokens;
@@ -42,11 +42,11 @@ static int	process_line(char *line, t_list **envp, int *last_status)
 	if (!tokens)
 		return (1);
 	expand_tokens(tokens, *envp, *last_status);
-	ast = parse(tokens, envp);
+	ast = parse_new(tokens, envp);  // NOUVEAU
 	free_token(tokens);
 	if (!ast)
 		return (*last_status = 2, 1);
-	*last_status = traverse_node(ast);
+	*last_status = traverse_node_new(ast);  // NOUVEAU
 	free_ast(ast);
 	return (1);
 }
@@ -111,7 +111,7 @@ int	main(int argc, char **argv, char **envp)
 		}
 		
 		// Traitement de la ligne
-		if (!process_line(line, &my_envp, &last_status))
+		if (!process_line_new(line, &my_envp, &last_status))
 			break;
 		
 		free(line);

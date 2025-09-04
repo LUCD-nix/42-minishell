@@ -148,6 +148,11 @@ t_ast				*init_cmd_node(t_command *cmd, t_list **env);
 void				free_ast(t_ast *ast);
 void				free_cmd(t_command *cmd);
 t_command			*init_cmd(char **args);
+t_ast				*parse_expression_bash_compatible(t_parser *parser, t_precedence, t_list **env);
+t_ast				*parse_subshell_bash_compatible(t_parser *parser, t_list **env);
+t_ast				*parse_command_bash_compatible(t_parser *parser, t_list **env);
+t_ast				*parse_new(t_token *tokens, t_list **env);
+t_ast				*parse_primary_bash_compatible(t_parser *parser, t_list **env);
 
 /*---Built-ins---*/
 int					builtin_echo(int argc,  char **argv);
@@ -173,7 +178,7 @@ void				pipe_propagate_fd(t_ast *node);
 int					pipe_from_file(char *filename);
 
 /*---Traversal--*/
-int					traverse_node(t_ast *node);
+int					traverse_node_new(t_ast *node);
 int					traverse_file(t_ast *node, int flags);
 int					traverse_pipe(t_ast *node);
 int					traverse_builtin(t_ast *node);
@@ -181,6 +186,7 @@ int					traverse_andor(t_ast *node, t_node_type type);
 void				andor_propagate_fd(t_ast *node);
 int					traverse_heredoc(t_ast *node);
 int					create_heredoc_fd(t_ast *node);
+int					traverse_subshell_new(t_ast *node);
 
 /*---Execution---*/
 int					exec_process(t_ast *command);

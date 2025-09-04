@@ -72,7 +72,7 @@ int	traverse_pipe(t_ast *node)
 	if (pid_left == CHILD_PID)
 	{
 		setup_child_signals(); // FIX: Configurer les signaux pour l'enfant
-		exit(traverse_node(node->left));
+		exit(traverse_node_new(node->left));
 	}
 	
 	if (close(node->left->fd_out) == -1)
@@ -84,7 +84,7 @@ int	traverse_pipe(t_ast *node)
 	if (pid_right == CHILD_PID)
 	{
 		setup_child_signals(); // FIX: Configurer les signaux pour l'enfant
-		exit(traverse_node(node->right));
+		exit(traverse_node_new(node->right));
 	}
 	
 	if (close(node->right->fd_in) == -1)
@@ -106,16 +106,16 @@ int	traverse_andor(t_ast *node, t_node_type type)
 
 	res = -1;
 	andor_propagate_fd(node);
-	res = traverse_node(node->left);
+	res = traverse_node_new(node->left);
 	if (type == NODE_AND)
 	{
 		if (res == EXIT_SUCCESS)
-			res = traverse_node(node->right);
+			res = traverse_node_new(node->right);
 	}
 	else // NODE_OR
 	{
 		if (res != EXIT_SUCCESS)
-			res = traverse_node(node->right);
+			res = traverse_node_new(node->right);
 	}
 	return (res);
 }
