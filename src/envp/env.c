@@ -62,29 +62,47 @@ char	*env_get(t_list *env, char *key)
 	return (NULL);
 }
 
-int	env_set(t_list *env, char *key, char *value)
+int	env_set(t_list **env_list, char *key, char *value)  // FIX: passer **env_list
 {
 	t_list	*cursor;
 	t_env	*temp;
 	size_t	key_len;
+	char	*new_entry;
 
-	cursor = env;
-	if (value == NULL)
+	if (!key || !value)
 		return (-1);
+	
+	cursor = *env_list;
 	key_len = ft_strlen(key);
+	
+	// Chercher si la variable existe déjà
 	while (cursor != NULL)
 	{
 		temp = (t_env *)cursor->content;
 		if (ft_memcmp(key, temp->key, key_len + 1) == 0)
 		{
+			// Remplacer la valeur existante
 			free(temp->value);
-			temp->value = ft_strdup(value); // FIX: copier au lieu d'assigner
+			temp->value = ft_strdup(value);
 			return (temp->value ? 0 : -1);
 		}
 		cursor = cursor->next;
 	}
-	return (-1);
+	
+	// Variable n'existe pas, la créer
+	new_entry = ft_strjoin(key, "=");
+	if (!new_entry)
+		return (-1);
+	new_entry = ft_strjoin_free_first(new_entry, value);
+	if (!new_entry)
+		return (-1);
+	
+	env_lst_add(env_list, new_entry);
+	free(new_entry);
+	return (0);
 }
+
+
 // int	main(void)
 // {
 // 	extern char	**environ;

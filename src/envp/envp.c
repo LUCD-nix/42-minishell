@@ -39,24 +39,21 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 	char	*key;
 	char	*val;
 	char	*new_res;
-	int		need_free_val = 0;
 
 	start = *i;
 	while (ft_isalnum(value[*i]) || value[*i] == '_')
 		(*i)++;
+	
 	key = ft_substr(value, start, *i - start);
 	if (!key)
 		return (res);
+	
 	val = env_get(env, key);
 	if (!val)
-	{
-		val = ft_strdup(""); // FIX: marquer pour libération
-		need_free_val = 1;
-	}
+		val = ""; // FIX: utiliser directement une chaîne vide
+	
 	new_res = ft_strjoin(res, val);
 	free(key);
-	if (need_free_val) // FIX: libérer si on a alloué
-		free(val);
 	free(res);
 	return (new_res);
 }

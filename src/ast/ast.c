@@ -23,6 +23,10 @@ t_ast	*init_ast_node(t_node_type type, t_list **env)
 	ast->type = type;
 	ast->command = NULL;
 	ast->filename = NULL;
+	ast->input_file = NULL;
+	ast->output_file = NULL;
+	ast->append_mode = 0;
+	ast->heredoc_fd = -1;
 	ast->fd_in = STDIN_FILENO;
 	ast->fd_out = STDOUT_FILENO;
 	ast->env = env;
@@ -109,7 +113,6 @@ void	free_cmd(t_command *cmd)
 		free(cmd->path);
 	free(cmd);
 }
-
 void	free_ast(t_ast *ast)
 {
 	if (!ast)
@@ -117,6 +120,12 @@ void	free_ast(t_ast *ast)
 	free_cmd(ast->command);
 	if (ast->filename)
 		free(ast->filename);
+	if (ast->input_file)
+		free(ast->input_file);
+	if (ast->output_file)
+		free(ast->output_file);
+	if (ast->heredoc_fd >= 0)
+		close(ast->heredoc_fd);
 	free_ast(ast->left);
 	free_ast(ast->right);
 	free(ast);

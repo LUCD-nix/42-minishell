@@ -25,7 +25,7 @@
 # define CHILD_PID 0
 # define PATH_MAX 4096
 
-extern volatile sig_atomic_t g_signal_received;  // pas de = 0 ici
+extern volatile sig_atomic_t g_signal_received;
 
 typedef enum e_node_type
 {
@@ -112,7 +112,11 @@ typedef struct s_ast
 {
 	t_node_type		type;
 	t_command		*command;
-	char			*filename;
+	char			*filename;         // Garde pour compatibilité
+	char			*input_file;       // NOUVEAU: fichier d'entrée final
+	char			*output_file;      // NOUVEAU: fichier de sortie final
+	int				append_mode;       // NOUVEAU: 0 = >, 1 = >>
+	int				heredoc_fd;        // NOUVEAU: fd pour heredoc
 	int				fd_in;
 	int				fd_out;
 	struct s_ast	*left;
@@ -159,7 +163,7 @@ t_list				*env_lst_add(t_list **lst, char *str);
 t_list				*env_lst_from_str_arr(char **to_copy);
 char				**env_lst_to_str_array(t_list *env);
 char				*env_get(t_list *env, char *key);
-int					env_set(t_list *env, char *key, char *value);
+int					env_set(t_list **env, char *key, char *value);
 void				env_delete_key(t_list **head, char *key);
 void				env_free(void *ptr);
 
@@ -216,7 +220,7 @@ void				handle_sigquit_child(int sig);
 void				setup_interactive_signals(void);
 void				setup_child_signals(void);
 void				setup_heredoc_signals(void);
-int					ingore_signals(void);
+int					ignore_signals(void);
 int					check_signal_status(void);
 
 

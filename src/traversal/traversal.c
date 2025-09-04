@@ -164,13 +164,12 @@ static int	setup_output_redirection(t_ast *node)
 
 int	traverse_multiple_redirections(t_ast *node)
 {
-	int		input_fd = -2;  // -2 = pas de redirection, -1 = erreur, >=0 = fd valide
+	int		input_fd = -2;
 	int		output_fd = -2;
 	t_ast	*current = node;
 	int		res;
 	int		temp_fd;
 
-	// Parcourir toutes les redirections pour trouver les dernières valides
 	while (current && (current->type == NODE_REDIR_IN || 
 			current->type == NODE_REDIR_OUT || 
 			current->type == NODE_APPEND || 
@@ -178,7 +177,6 @@ int	traverse_multiple_redirections(t_ast *node)
 	{
 		if (current->type == NODE_REDIR_IN || current->type == NODE_HEREDOC)
 		{
-			// Fermer l'ancien fd d'entrée s'il existe
 			if (input_fd >= 0)
 				close(input_fd);
 			temp_fd = setup_input_redirection(current);
@@ -186,14 +184,13 @@ int	traverse_multiple_redirections(t_ast *node)
 			{
 				if (output_fd >= 0)
 					close(output_fd);
-				return (-1);
+				return (1); // FIX: retourner 1 au lieu de -1 pour les erreurs de redirection
 			}
 			if (temp_fd >= 0)
 				input_fd = temp_fd;
 		}
-		else // Redirection de sortie
+		else
 		{
-			// Fermer l'ancien fd de sortie s'il existe
 			if (output_fd >= 0)
 				close(output_fd);
 			temp_fd = setup_output_redirection(current);
@@ -201,7 +198,7 @@ int	traverse_multiple_redirections(t_ast *node)
 			{
 				if (input_fd >= 0)
 					close(input_fd);
-				return (-1);
+				return (1); // FIX: retourner 1 au lieu de -1
 			}
 			if (temp_fd >= 0)
 				output_fd = temp_fd;
@@ -209,24 +206,20 @@ int	traverse_multiple_redirections(t_ast *node)
 		current = current->left;
 	}
 
-	// current devrait maintenant pointer vers la commande
 	if (!current)
 	{
 		if (input_fd >= 0)
 			close(input_fd);
 		if (output_fd >= 0)
 			close(output_fd);
-		return (-1);
+		return (1);
 	}
 
-	// Propager les fd du parent et assigner les nouveaux fd
 	current->fd_in = (input_fd >= 0) ? input_fd : node->fd_in;
 	current->fd_out = (output_fd >= 0) ? output_fd : node->fd_out;
 
-	// Exécuter la commande
 	res = traverse_node(current);
 
-	// Nettoyer les fd
 	if (input_fd >= 0)
 		close(input_fd);
 	if (output_fd >= 0)
@@ -326,6 +319,63 @@ int	traverse_subshell(t_ast *node)
 	return (-1);
 }
 
+int	traverse_command_simple(t_ast *node)
+{
+	int	input_fd;
+	int	output_fd;
+	int	res;
+
+	input_fd = node->fd_in;
+	output_fd = node->fd_out;
+	
+	// Gérer le fichier d'entrée
+	if (node->input_file)
+	{
+		input_fd = open(node->input_file, O_RDONLY);
+		if (input_fd == -1)
+		{
+			perror("minishell: input redirection");
+			return (1);
+		}
+	}
+	else if (node->heredoc_fd >= 0)
+	{
+		input_fd = node->heredoc_fd;
+	}
+	
+	// Gérer le fichier de sortie
+	if (node->output_file)
+	{
+		int flags = O_WRONLY | O_CREAT | (node->append_mode ? O_APPEND : O_TRUNC);
+		output_fd = open(node->output_file, flags, 0644);
+		if (output_fd == -1)
+		{
+			if (node->input_file && input_fd >= 0)
+				close(input_fd);
+			perror("minishell: output redirection");
+			return (1);
+		}
+	}
+	
+	// Assigner les fd à la commande
+	node->fd_in = input_fd;
+	node->fd_out = output_fd;
+	
+	// Exécuter la commande
+	if (node->type == NODE_BUILTIN)
+		res = traverse_builtin(node);
+	else
+		res = exec_process(node);
+	
+	// Nettoyer les fd
+	if (node->input_file && input_fd >= 0)
+		close(input_fd);
+	if (node->output_file && output_fd >= 0)
+		close(output_fd);
+	
+	return (res);
+}
+
 int	traverse_node(t_ast *node)
 {
 	int			res;
@@ -337,18 +387,24 @@ int	traverse_node(t_ast *node)
 	res = -1;
 	type = node->type;
 	
-	if (type == NODE_CMD)
-		res = exec_process(node);
-	else if (type == NODE_BUILTIN)
-		res = traverse_builtin(node);
+	if (type == NODE_CMD || type == NODE_BUILTIN)
+	{
+		// NOUVEAU: Utiliser la logique simplifiée si pas de redirections complexes
+		if (!node->left && !node->right)
+			res = traverse_command_simple(node);
+		else if (type == NODE_CMD)
+			res = exec_process(node);
+		else
+			res = traverse_builtin(node);
+	}
 	else if (type == NODE_PIPE)
 		res = traverse_pipe(node);
 	else if (type == NODE_REDIR_IN || type == NODE_REDIR_OUT || type == NODE_APPEND)
-		res = traverse_redir(node);
+		res = traverse_redir(node);  // Pour compatibilité avec ancien code
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);
 	else if (type == NODE_HEREDOC)
-		res = traverse_heredoc(node);
+		res = traverse_heredoc(node);  // Pour compatibilité
 	else if (type == NODE_SUBSHELL)
 		res = traverse_subshell(node);
 		

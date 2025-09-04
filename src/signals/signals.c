@@ -72,10 +72,19 @@ void	setup_heredoc_signals(void)
 	signal(SIGQUIT, SIG_IGN);
 }
 
-void	ignore_signals(void)
+int	ignore_signals(void)
 {
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
+	struct sigaction	sa;
+
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	
+	if (sigaction(SIGINT, &sa, NULL) == -1)
+		return (-1);
+	if (sigaction(SIGQUIT, &sa, NULL) == -1)
+		return (-1);
+	return (0);
 }
 
 int	check_signal_status(void)

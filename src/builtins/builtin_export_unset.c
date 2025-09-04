@@ -100,14 +100,13 @@ int	builtin_export(int argc, t_ast *node)
 
 	if (argc == 1)
 		return (export_no_args(node));
+	
 	env_lst = node->env;
 	i = 0;
 	while (++i < argc)
 	{
-		// Vérifier si l'argument contient un '='
 		has_equals = (ft_strchr(node->command->args[i], '=') != NULL);
 		
-		// Validation du nom de variable
 		if (!is_valid_identifier(node->command->args[i]))
 		{
 			ft_printf("minishell: export: `%s': not a valid identifier\n", 
@@ -118,26 +117,25 @@ int	builtin_export(int argc, t_ast *node)
 		key = key_from_args(node, i);
 		if (!key)
 			return (EXIT_FAILURE);
-			
-		// Si pas de '=', on fait juste declare sans assigner de valeur
+		
 		if (!has_equals)
 		{
-			// Vérifier si la variable existe déjà
+			// FIX: Pour export sans =, juste marquer comme exportée
+			// sans changer la valeur si elle existe déjà
 			if (env_get(*env_lst, key) == NULL)
 			{
-				// Créer une variable vide (exported mais sans valeur)
-				char *empty_var = ft_strjoin(key, "=");
-				if (empty_var)
+				// Variable n'existe pas, créer avec valeur vide mais exportée
+				char *export_var = ft_strjoin(key, "");
+				if (export_var)
 				{
-					env_lst_add(env_lst, empty_var);
-					free(empty_var);
+					env_lst_add(env_lst, export_var);
+					free(export_var);
 				}
 			}
 			// Si elle existe déjà, ne rien faire (juste l'exporter)
 		}
 		else
 		{
-			// Avec '=', supprimer l'ancienne et ajouter la nouvelle
 			env_delete_key(env_lst, key);
 			env_lst_add(env_lst, node->command->args[i]);
 		}

@@ -58,31 +58,46 @@ int	traverse_builtin(t_ast *node)
 
 int	traverse_pipe(t_ast *node)
 {
-	int		res;
+	int		status_left, status_right;
 	pid_t	pid_left;
 	pid_t	pid_right;
 
-	res = -1;
 	pipe_propagate_fd(node);
 	if (pipe_create(node->left, node->right) == -1)
 		return (-1);
+	
 	pid_left = fork();
 	if (pid_left == -1)
 		return (-1);
 	if (pid_left == CHILD_PID)
+	{
+		setup_child_signals(); // FIX: Configurer les signaux pour l'enfant
 		exit(traverse_node(node->left));
+	}
+	
 	if (close(node->left->fd_out) == -1)
 		return (-1);
+	
 	pid_right = fork();
 	if (pid_right == -1)
 		return (-1);
 	if (pid_right == CHILD_PID)
+	{
+		setup_child_signals(); // FIX: Configurer les signaux pour l'enfant
 		exit(traverse_node(node->right));
+	}
+	
 	if (close(node->right->fd_in) == -1)
 		return (-1);
-	waitpid(pid_left, NULL, 0);
-	waitpid(pid_right, &res, 0);
-	return (res);
+	waitpid(pid_left, &status_left, 0);
+	waitpid(pid_right, &status_right, 0);
+	
+	// Retourner le code de sortie de la dernière commande (côté droit)
+	if (WIFEXITED(status_right))
+		return (WEXITSTATUS(status_right));
+	else if (WIFSIGNALED(status_right))
+		return (128 + WTERMSIG(status_right));
+	return (1);
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)

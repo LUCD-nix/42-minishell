@@ -49,18 +49,26 @@ static int	exec_get_path(t_ast *node)
 	char	*path_to_elf;
 	int		i;
 
+	// FIX: Si le chemin contient '/', ne pas utiliser PATH
+	if (ft_strchr(node->command->path, '/'))
+	{
+		if (access(node->command->path, X_OK) == 0)
+			return (0);
+		perror("minishell");
+		return (-1);
+	}
+
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
 	{
-		perror("minishell: PATH not found");
+		ft_printf("minishell: %s: No such file or directory\n", node->command->path);
 		return (-1);
 	}
+	
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
-	{
-		perror("minishell: split error");
 		return (-1);
-	}
+	
 	i = -1;
 	while (path_dirs[++i])
 	{
@@ -86,7 +94,7 @@ static int	exec_get_path(t_ast *node)
 		free(path_to_elf);
 	}
 	ft_free_tab(path_dirs);
-	perror("command not found");
+	ft_printf("minishell: %s: command not found\n", node->command->path);
 	return (-1);
 }
 

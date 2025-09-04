@@ -22,25 +22,27 @@ static int	get_home_dir(char *buf, t_list *env)
 	return (0);
 }
 
-static int	chdir_wrapper(char *to_change, t_list *env)
+static int	chdir_wrapper(char *to_change, t_list **env)  // FIX: passer **env
 {
 	int		res;
 	char	*old_pwd;
+	char	*new_pwd;
 
-	old_pwd = getcwd(NULL, 0); // FIX: stocker pour libérer
+	old_pwd = getcwd(NULL, 0);
 	if (old_pwd)
 	{
-		env_set(env, "OLDPWD", old_pwd);
-		free(old_pwd); // FIX: libérer la mémoire
+		env_set(env, "OLDPWD", old_pwd);  // FIX: utiliser la nouvelle fonction
+		free(old_pwd);
 	}
+	
 	res = chdir(to_change);
 	if (res == 0)
 	{
-		char *new_pwd = getcwd(NULL, 0);
+		new_pwd = getcwd(NULL, 0);
 		if (new_pwd)
 		{
-			env_set(env, "PWD", new_pwd);
-			free(new_pwd); // FIX: libérer aussi
+			env_set(env, "PWD", new_pwd);  // FIX: utiliser la nouvelle fonction
+			free(new_pwd);
 		}
 	}
 	return (res);
@@ -51,27 +53,28 @@ int	builtin_cd(int argc, t_ast *node)
 {
 	static char	home[PATH_MAX] = {0};
 	t_list		*env;
+	char		*oldpwd_value;
 
 	env = *node->env;
 	if (!*home && get_home_dir(home, env) == 1)
 		return (EXIT_FAILURE);
 	if (argc > 2)
 	{
-		// TODO : implement print to stderror
 		ft_printf("cd : Too many arguments");
 		return (-1);
 	}
 	if (argc == 1)
-		return (chdir(home));
+		return (chdir_wrapper(home, &env));
 	else
 	{
 		if (ft_memcmp("-", node->command->args[1], 2) == 0)
 		{
-			if (env_get(env, "OLDPWD") == NULL)
+			oldpwd_value = env_get(env, "OLDPWD");
+			if (oldpwd_value == NULL)
 				return (ft_printf("cd : OLDPWD not set\n"), EXIT_FAILURE);
-			return (chdir_wrapper(ft_strdup(env_get(env, "OLDPWD")), env));
+			return (chdir_wrapper(oldpwd_value, &env)); 
 		}
-		return (chdir_wrapper(node->command->args[1], env));
+		return (chdir_wrapper(node->command->args[1], &env));
 	}
 }
 
