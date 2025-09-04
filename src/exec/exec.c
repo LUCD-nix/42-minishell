@@ -36,9 +36,8 @@ int	exec_builtin(t_ast *node)
 		res = builtin_unset(argc, node);
 	else if (!ft_memcmp(node->command->path, "env", 4))
 		res = (builtin_env(argc, argv, envp));
-	// TODO :
-	// if (!ft_memcmp(node->command->path, "exit", 5))
-	// 	return(builtin_exit(argc, argv, envp));
+	else if (!ft_memcmp(node->command->path, "exit", 5))
+		res = builtin_exit(argc, argv, node->env);
 	ft_free_tab(envp);
 	return (res);
 }
@@ -53,13 +52,13 @@ static int	exec_get_path(t_ast *node)
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
 	{
-		perror("minishell: no defined PATH"); // FIX: perror séparé
+		perror("minishell: PATH not found");
 		return (-1);
 	}
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
 	{
-		perror("minishell: split error in PATH"); // FIX: perror séparé  
+		perror("minishell: split error");
 		return (-1);
 	}
 	i = -1;
@@ -87,7 +86,7 @@ static int	exec_get_path(t_ast *node)
 		free(path_to_elf);
 	}
 	ft_free_tab(path_dirs);
-	perror("Error: program not in PATH"); // FIX: perror séparé
+	perror("command not found");
 	return (-1);
 }
 
@@ -101,20 +100,38 @@ int	exec_process(t_ast *process)
 	pid = fork();
 	if (pid == -1)
 		return (-1);
-	envp = env_lst_to_str_array(*process->env);
-	if (exec_get_path(process) == -1)
-		return (-1);
 	if (pid == CHILD_PID)
 	{
+		// FIX: Gérer les erreurs dans le processus enfant
+		envp = env_lst_to_str_array(*process->env);
+		if (!envp)
+			exit(1);
+		if (exec_get_path(process) == -1)
+		{
+			ft_free_tab(envp);
+			exit(127);  // Command not found
+		}
 		if (process->fd_in != STDIN_FILENO
 			&& dup2(process->fd_in, STDIN_FILENO) == -1)
-			return (-1);
+		{
+			ft_free_tab(envp);
+			exit(1);
+		}
 		if (process->fd_out != STDOUT_FILENO
 			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
-			return (-1);
+		{
+			ft_free_tab(envp);
+			exit(1);
+		}
 		execve(process->command->path, process->command->args, envp);
+		// Si on arrive ici, execve a échoué
+		perror("execve");
+		ft_free_tab(envp);
+		exit(126);  // Command invoked cannot execute
 	}
 	waitpid(pid, &return_value, 0);
-	ft_free_tab(envp);
-	return (return_value);
+	// FIX: Retourner le bon code de sortie
+	if (WIFEXITED(return_value))
+		return (WEXITSTATUS(return_value));
+	return (-1);
 }

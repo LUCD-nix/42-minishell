@@ -2,33 +2,6 @@
 
 volatile sig_atomic_t	g_signal_received = 0;
 
-static void	handle_signal(int sig)
-{
-	g_signal_received = sig;
-}
-
-static void	setup_signals(void)
-{
-	struct sigaction	sa;
-
-	sa.sa_handler = handle_signal;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGQUIT, &sa, NULL);
-}
-
-static void	handle_signals_interactive(void)
-{
-	if (g_signal_received == SIGINT)
-	{
-		printf("\n");
-		rl_on_new_line();
-		rl_replace_line("", 0);
-		rl_redisplay();
-		g_signal_received = 0;
-	}
-}
 
 static void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 {
@@ -72,10 +45,21 @@ static int	process_line(char *line, t_list **envp, int *last_status)
 	ast = parse(tokens, envp);
 	free_token(tokens);
 	if (!ast)
-		return (perror("Parse error: Invalid syntax\n"), *last_status = 2, 1);
+		return (*last_status = 2, 1);
 	*last_status = traverse_node(ast);
 	free_ast(ast);
 	return (1);
+}
+
+static void	check_eof_signal(char *line, t_list **envp)
+{
+	if (!line)
+	{
+		ft_printf("exit\n");
+		ft_lstclear(envp, &env_free);
+		rl_clear_history();
+		exit(0);
+	}
 }
 
 int	main(int argc, char **argv, char **envp)
@@ -83,38 +67,58 @@ int	main(int argc, char **argv, char **envp)
 	char	*line;
 	t_list	*my_envp;
 	int		last_status;
+	int		signal_status;
 
 	(void)argc;
 	(void)argv;
-	setup_signals();
+	
+	// Configuration initiale des signaux
+	setup_interactive_signals();
+	
 	my_envp = env_lst_from_str_arr(envp);
 	if (!my_envp)
 		return (perror("Error: Failed to copy environment\n"), 1);
-	last_status = 0;
-	printf("Minishell - Parsing Test Version\n");
-	printf("Type 'exit' to quit\n\n");
+	
+	last_status = 0;	
 	while (1)
 	{
-		handle_signals_interactive();
-		line = readline("minishell$ ");
-		if (!line)
+		// Vérifier si un signal a été reçu
+		signal_status = check_signal_status();
+		if (signal_status)
+			last_status = signal_status;
+		
+		line = readline("$Minishell :");
+		
+		// Gestion Ctrl+D (EOF)
+		check_eof_signal(line, &my_envp);
+		
+		// Gestion ligne vide
+		if (ft_strlen(line) == 0)
 		{
-			printf("exit\n");
-			break ;
+			free(line);
+			continue;
 		}
-		if (ft_strlen(line) > 0)
-			add_history(line);
+		
+		// Ajouter à l'historique
+		add_history(line);
+		
+		// Vérification commande exit
 		if (ft_strcmp(line, "exit") == 0)
 		{
 			free(line);
-			break ;
+			ft_printf("exit\n");
+			break;
 		}
+		
+		// Traitement de la ligne
 		if (!process_line(line, &my_envp, &last_status))
-			break ;
+			break;
+		
 		free(line);
 	}
+	
+	// Nettoyage final
 	ft_lstclear(&my_envp, &env_free);
 	rl_clear_history();
-	printf("exit\n");
 	return (last_status);
 }

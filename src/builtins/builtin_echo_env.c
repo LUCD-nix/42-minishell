@@ -12,34 +12,31 @@
 #include "../../minishell.h"
 #include <stdlib.h>
 
-int	builtin_echo(int argc, char **argv)
+int builtin_echo(int argc, char **argv)
 {
-	int	i;
-	int	write_new_line;
+    int i = 1;
+    int write_new_line = 1;
 
-	if (argc == 1)
-	{
-		if (ft_printf("\n") < 0)
-			return (EXIT_FAILURE);
-		return (EXIT_SUCCESS);
-	}
-	i = 1;
-	write_new_line = ft_strncmp(argv[1], "-n", 3);
-	if (!write_new_line)
-		i++;
-	while (i < argc)
-	{
-		if (ft_printf("%s", argv[i]) < 0)
-			return (EXIT_FAILURE);
-		i++;
-	}
-	if (write_new_line)
-	{
-		if (ft_printf("\n") < 0)
-			return (EXIT_FAILURE);
-	}
-	return (EXIT_SUCCESS);
+    if (argc > 1 && ft_strncmp(argv[1], "-n", 3) == 0)
+    {
+        write_new_line = 0;
+        i++;
+    }
+
+    while (i < argc)
+    {
+        ft_printf("%s", argv[i]);
+        if (argv[i + 1])
+            ft_printf(" ");
+        i++;
+    }
+
+    if (write_new_line)
+        ft_printf("\n");
+
+    return 0; // Toujours 0, comme Bash
 }
+
 
 int	builtin_env(int argc, char **argv, char **envp)
 {

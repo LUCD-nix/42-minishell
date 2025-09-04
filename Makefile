@@ -6,6 +6,7 @@ CFILES = src/ast/ast.c \
 	src/builtins/builtin_cd_pwd.c \
 	src/builtins/builtin_echo_env.c \
 	src/builtins/builtin_export_unset.c \
+	src/builtins/builtin_exit.c \
 	src/envp/env.c \
 	src/envp/envp.c \
 	src/envp/env_init_append.c \
@@ -16,7 +17,8 @@ CFILES = src/ast/ast.c \
 	src/token/token.c \
 	src/token/utils.c \
 	src/traversal/traversal.c \
-	src/traversal/traversal_funcs.c
+	src/traversal/traversal_funcs.c \
+	src/signals/signals.c
 
 OBJS := $(CFILES:.c=.o)
 

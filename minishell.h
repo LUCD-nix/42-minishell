@@ -25,6 +25,8 @@
 # define CHILD_PID 0
 # define PATH_MAX 4096
 
+extern volatile sig_atomic_t g_signal_received;  // pas de = 0 ici
+
 typedef enum e_node_type
 {
 	NODE_CMD,
@@ -87,9 +89,9 @@ typedef struct s_token
 
 typedef struct s_command
 {
-	char	*path;
-	char	**args;
-	int		argc;
+	char			*path;
+	char			**args;
+	int				argc;
 }	t_command;
 
 typedef struct s_redir
@@ -102,8 +104,8 @@ typedef struct s_redir
 
 typedef struct s_env
 {
-	char	*key;
-	char	*value;
+	char			*key;
+	char			*value;
 }	t_env;
 
 typedef struct s_ast
@@ -126,22 +128,22 @@ typedef struct s_parser
 }	t_parser;
 
 /* Lexer */
-t_lexeme		*lexer(char *line);
-void			free_lexemes(t_lexeme *lex);
-char			*read_line(void);
+t_lexeme			*lexer(char *line);
+void				free_lexemes(t_lexeme *lex);
+char				*read_line(void);
 
 /* Tokens */
-t_token			*init_token(const char *line, t_token_type type, t_quote_type quote);
-void			free_token(t_token *token);
-t_token			*lexer_to_token(t_lexeme *lex);
-t_token_type	get_token_type(char *token);
+t_token				*init_token(const char *line, t_token_type type, t_quote_type quote);
+void				free_token(t_token *token);
+t_token				*lexer_to_token(t_lexeme *lex);
+t_token_type		get_token_type(char *token);
 
 /* AST */
-t_ast			*init_ast_node(t_node_type type, t_list **env);
-t_ast			*init_cmd_node(t_command *cmd, t_list **env);
-void			free_ast(t_ast *ast);
-void			free_cmd(t_command *cmd);
-t_command		*init_cmd(char **args);
+t_ast				*init_ast_node(t_node_type type, t_list **env);
+t_ast				*init_cmd_node(t_command *cmd, t_list **env);
+void				free_ast(t_ast *ast);
+void				free_cmd(t_command *cmd);
+t_command			*init_cmd(char **args);
 
 /*---Built-ins---*/
 int					builtin_echo(int argc,  char **argv);
@@ -150,7 +152,7 @@ int					builtin_pwd(int argc);
 int					builtin_export(int argc, t_ast *node);
 int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc,  char **argv, char **envp);
-// int					builtin_exit(int argc,  char **argv, char **envp);
+int					builtin_exit(int argc, char **argv, t_list **env);
 
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);
@@ -181,30 +183,42 @@ int					exec_process(t_ast *command);
 int					exec_builtin(t_ast *builtin);
 
 /* Pratt Parser */
-t_ast			*parse(t_token *tokens, t_list **env);
-t_ast			*parse_expression(t_parser *parser, t_precedence precedence,
+t_ast				*parse(t_token *tokens, t_list **env);
+t_ast				*parse_expression(t_parser *parser, t_precedence precedence,
 	t_list **env);
-t_ast			*parse_primary(t_parser *parser, t_list **env);
-t_ast			*parse_command(t_parser *parser, t_list **env);
-t_ast			*parse_subshell(t_parser *parser, t_list **env);
-t_precedence	get_precedence(t_token_type type);
-int				is_builtin(char *value);
+t_ast				*parse_primary(t_parser *parser, t_list **env);
+t_ast				*parse_command(t_parser *parser, t_list **env);
+t_ast				*parse_subshell(t_parser *parser, t_list **env);
+t_precedence		get_precedence(t_token_type type);
+int					is_builtin(char *value);
 
 /* Parser utils */
-void			advance(t_parser *parser);
-int				match(t_parser *parser, t_token_type type);
-int				check(t_parser *parser, t_token_type type);
-void			error(t_parser *parser, char *message);
-int				at_end(t_parser *parser);
+void				advance(t_parser *parser);
+int					match(t_parser *parser, t_token_type type);
+int					check(t_parser *parser, t_token_type type);
+void				error(t_parser *parser, char *message);
+int					at_end(t_parser *parser);
 
 /* Environment */
-char			*get_env_value(char *key, t_list *envp);
-char			*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote);
+char				*get_env_value(char *key, t_list *envp);
+char				*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote);
 // void			print_tokens(t_token *tokens);
 //
 /* Utils */
-void			ft_free_tab(char **tab);
-void			*ft_realloc(void *ptr, size_t size);
+void				ft_free_tab(char **tab);
+void				*ft_realloc(void *ptr, size_t size);
+
+
+/* Signals */
+void				handle_sigint_interactive(int sig);
+void				handle_sigint_child(int sig);
+void				handle_sigquit_child(int sig);
+void				setup_interactive_signals(void);
+void				setup_child_signals(void);
+void				setup_heredoc_signals(void);
+int					ingore_signals(void);
+int					check_signal_status(void);
+
 
 #endif
 
