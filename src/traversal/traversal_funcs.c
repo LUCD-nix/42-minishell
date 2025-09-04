@@ -71,7 +71,9 @@ int	traverse_pipe(t_ast *node)
 		return (-1);
 	if (pid_left == CHILD_PID)
 	{
-		setup_child_signals(); // FIX: Configurer les signaux pour l'enfant
+		setup_child_signals();
+		// FIX: Fermer le fd de lecture dans l'enfant gauche
+		close(node->right->fd_in);
 		exit(traverse_node_new(node->left));
 	}
 	
@@ -83,16 +85,19 @@ int	traverse_pipe(t_ast *node)
 		return (-1);
 	if (pid_right == CHILD_PID)
 	{
-		setup_child_signals(); // FIX: Configurer les signaux pour l'enfant
+		setup_child_signals();
 		exit(traverse_node_new(node->right));
 	}
 	
 	if (close(node->right->fd_in) == -1)
 		return (-1);
+	
+	// FIX: Attendre les deux processus et gérer les erreurs
 	waitpid(pid_left, &status_left, 0);
 	waitpid(pid_right, &status_right, 0);
 	
-	// Retourner le code de sortie de la dernière commande (côté droit)
+	// Si la commande de gauche échoue, la pipe est cassée
+	// mais on retourne le statut de la dernière commande
 	if (WIFEXITED(status_right))
 		return (WEXITSTATUS(status_right));
 	else if (WIFSIGNALED(status_right))

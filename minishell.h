@@ -185,7 +185,7 @@ int					traverse_builtin(t_ast *node);
 int					traverse_andor(t_ast *node, t_node_type type);
 void				andor_propagate_fd(t_ast *node);
 int					traverse_heredoc(t_ast *node);
-int					create_heredoc_fd(t_ast *node);
+int					create_heredoc_fd(t_ast *node, t_list **env);
 int					traverse_subshell_new(t_ast *node);
 
 /*---Execution---*/
@@ -212,6 +212,7 @@ int					at_end(t_parser *parser);
 /* Environment */
 char				*get_env_value(char *key, t_list *envp);
 char				*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote);
+char				*append_char(char *res, char c);
 // void			print_tokens(t_token *tokens);
 //
 /* Utils */

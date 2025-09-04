@@ -41,6 +41,14 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 	char	*new_res;
 
 	start = *i;
+	
+	// FIX: Vérifier qu'il y a au moins un caractère valide après $
+	if (!ft_isalnum(value[*i]) && value[*i] != '_')
+	{
+		// Pas de variable valide, traiter $ comme caractère littéral
+		return (append_char(res, '$'));
+	}
+	
 	while (ft_isalnum(value[*i]) || value[*i] == '_')
 		(*i)++;
 	
@@ -50,7 +58,7 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 	
 	val = env_get(env, key);
 	if (!val)
-		val = ""; // FIX: utiliser directement une chaîne vide
+		val = "";
 	
 	new_res = ft_strjoin(res, val);
 	free(key);
@@ -58,7 +66,7 @@ static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 	return (new_res);
 }
 
-static char	*append_char(char *res, char c)
+char	*append_char(char *res, char c)
 {
 	char	buf[2];
 	char	*new_res;

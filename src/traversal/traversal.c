@@ -35,17 +35,18 @@ static int	count_redirections(t_ast *node)
 	return (count);
 }
 
-int	create_heredoc_fd(t_ast *node)
+int	create_heredoc_fd(t_ast *node, t_list **env)
 {
 	int		tmp_file;
 	char	*line;
+	char	*expanded_line;
 	size_t	delim_len;
 	char	*temp_filename;
 	char	*pid_str;
 	char	*counter_str;
 	static int heredoc_counter = 0;
 
-	// Créer un nom de fichier unique pour éviter les conflits
+	// Créer fichier temporaire...
 	pid_str = ft_itoa(getpid());
 	counter_str = ft_itoa(heredoc_counter++);
 	if (!pid_str || !counter_str)
@@ -84,26 +85,38 @@ int	create_heredoc_fd(t_ast *node)
 		return (-1);
 	}
 	
-	printf("heredoc> ");
-	line = get_next_line(STDIN_FILENO);
-	while (line)
+	while (1)
 	{
-		// Vérifier si on a atteint le délimiteur
-		if (ft_strlen(line) == delim_len + 1 && 
-			ft_strncmp(line, node->filename, delim_len) == 0 && 
-			line[delim_len] == '\n')
+		line = readline("heredoc> ");
+		if (!line)
+		{
+			printf("\n");
+			break;
+		}
+		
+		if (ft_strlen(line) == delim_len && 
+			ft_strncmp(line, node->filename, delim_len) == 0)
 		{
 			free(line);
 			break;
 		}
 		
-		write(tmp_file, line, ft_strlen(line));
+		// NOUVEAU: Expand les variables avec l'environnement passé
+		expanded_line = expand_variables(line, env, 0, Q_NONE);
+		if (expanded_line)
+		{
+			write(tmp_file, expanded_line, ft_strlen(expanded_line));
+			free(expanded_line);
+		}
+		else
+		{
+			write(tmp_file, line, ft_strlen(line));
+		}
+		
+		write(tmp_file, "\n", 1);
 		free(line);
-		printf("heredoc> ");
-		line = get_next_line(STDIN_FILENO);
 	}
 	
-	// Repositionner au début du fichier pour la lecture
 	if (lseek(tmp_file, 0, SEEK_SET) == -1)
 	{
 		perror("minishell: lseek heredoc");
@@ -113,20 +126,20 @@ int	create_heredoc_fd(t_ast *node)
 		return (-1);
 	}
 	
-	// Note: le fichier sera supprimé quand le fd sera fermé
 	unlink(temp_filename);
 	free(temp_filename);
 	return (tmp_file);
 }
 
-static int	setup_input_redirection(t_ast *node)
+
+static int	setup_input_redirection(t_ast *node, t_list *env)
 {
 	int	fd;
 
 	if (node->type == NODE_HEREDOC)
 	{
 		// Gérer heredoc directement
-		return (create_heredoc_fd(node));
+		return (create_heredoc_fd(node, env));
 	}
 	else if (node->type == NODE_REDIR_IN)
 	{
@@ -179,7 +192,7 @@ int	traverse_multiple_redirections(t_ast *node)
 		{
 			if (input_fd >= 0)
 				close(input_fd);
-			temp_fd = setup_input_redirection(current);
+			temp_fd = setup_input_redirection(current, node->env);
 			if (temp_fd == -1)
 			{
 				if (output_fd >= 0)
@@ -236,7 +249,7 @@ int	traverse_redir(t_ast *node)
 	redir_count = count_redirections(node);
 	
 	if (redir_count > 1)
-		return (traverse_multiple_redirections(node));
+		return (traverse_multiple_redirections(node, node->env));
 	
 	// Redirection simple - méthode originale optimisée
 	int	file_fd;
@@ -277,11 +290,10 @@ int	traverse_heredoc(t_ast *node)
 	int		heredoc_fd;
 	int		res;
 
-	heredoc_fd = create_heredoc_fd(node);
+	heredoc_fd = create_heredoc_fd(node, *node->env);  // Passer l'environnement
 	if (heredoc_fd == -1)
 		return (-1);
 	
-	// Propager les fd et rediriger l'entrée
 	node->left->fd_in = heredoc_fd;
 	node->left->fd_out = node->fd_out;
 	
@@ -363,6 +375,10 @@ int	traverse_command_simple(t_ast *node)
 	int	output_fd;
 	int	res;
 
+	// FIX: Vérifier si le nœud a une erreur de redirection
+	if (node->fd_in == -2)
+		return (1);  // Erreur de redirection = exit code 1
+
 	input_fd = node->fd_in;
 	output_fd = node->fd_out;
 	
@@ -373,7 +389,7 @@ int	traverse_command_simple(t_ast *node)
 		if (input_fd == -1)
 		{
 			perror("minishell: input redirection");
-			return (1);
+			return (1);  // FIX: retourner 1 au lieu de -1
 		}
 	}
 	else if (node->heredoc_fd >= 0)
@@ -391,7 +407,7 @@ int	traverse_command_simple(t_ast *node)
 			if (node->input_file && input_fd >= 0)
 				close(input_fd);
 			perror("minishell: output redirection");
-			return (1);
+			return (1);  // FIX: retourner 1 au lieu de -1
 		}
 	}
 	

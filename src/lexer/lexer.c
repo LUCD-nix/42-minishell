@@ -45,8 +45,6 @@ static t_lexeme	handle_separator(char *line, int *i)
 	return (lex);
 }
 
-
-
 static t_lexeme	handle_quote(char *line, int *i)
 {
 	t_lexeme	lex;
@@ -68,15 +66,19 @@ static t_lexeme	handle_quote(char *line, int *i)
 		*i += index;
 		return (lex);
 	}
-	lex.value = ft_substr(line, 1, index - 1);
-	if (quote == '\'')
-		lex.quote = Q_SIMPLE;
-	else
+	if (quote == '"')
+	{
+		lex.value = ft_substr(line, 0, index + 1);
 		lex.quote = Q_DOUBLE;
+	}
+	else
+	{
+		lex.value = ft_substr(line, 1, index - 1);
+		lex.quote = Q_SIMPLE;
+	}
 	*i += index + 1;
 	return (lex);
 }
-
 
 static int	is_separator(char *line)
 {
@@ -99,16 +101,54 @@ static t_lexeme	handle_word(char *line, int *i)
 {
 	int			index;
 	t_lexeme	lex;
+	int			in_quotes;
+	char		quote_char;
 
 	lex = (t_lexeme){NULL, Q_NONE};
 	index = 0;
-	while (line[index] && !is_separator(&line[index]) && line[index] != ' ')
+	in_quotes = 0;
+	quote_char = 0;
+	
+	while (line[index])
 	{
-		if (line[index] == '\\' && line[index + 1])
+		// Si on rencontre une quote et qu'on n'est pas déjà dans des quotes
+		if (!in_quotes && (line[index] == '\'' || line[index] == '"'))
+		{
+			in_quotes = 1;
+			quote_char = line[index];
 			index++;
-		index++;
+		}
+		// Si on est dans des quotes et qu'on trouve la quote fermante
+		else if (in_quotes && line[index] == quote_char)
+		{
+			in_quotes = 0;
+			quote_char = 0;
+			index++;
+		}
+		// Si on est dans des quotes, continuer peu importe le caractère
+		else if (in_quotes)
+		{
+			index++;
+		}
+		// Si on n'est pas dans des quotes, vérifier les séparateurs et espaces
+		else if (is_separator(&line[index]) || line[index] == ' ')
+		{
+			break;
+		}
+		// Gestion de l'échappement
+		else if (line[index] == '\\' && line[index + 1])
+		{
+			index += 2;
+		}
+		else
+		{
+			index++;
+		}
 	}
-	return (*i += index, lex.value = ft_substr(line, 0, index), lex);
+	
+	*i += index;
+	lex.value = ft_substr(line, 0, index);
+	return (lex);
 }
 
 static void	skip_spaces(char *line, int *i)

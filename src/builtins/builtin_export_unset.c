@@ -32,6 +32,32 @@ static int	is_valid_identifier(char *str)
 	return (1);
 }
 
+static char	*remove_quotes(char *str)
+{
+	int		len;
+	char	*result;
+
+	if (!str)
+		return (NULL);
+	
+	len = ft_strlen(str);
+	
+	// Si la chaîne commence et finit par des guillemets doubles
+	if (len >= 2 && str[0] == '"' && str[len - 1] == '"')
+	{
+		result = ft_substr(str, 1, len - 2);
+		return (result);
+	}
+	// Si la chaîne commence et finit par des guillemets simples
+	else if (len >= 2 && str[0] == '\'' && str[len - 1] == '\'')
+	{
+		result = ft_substr(str, 1, len - 2);
+		return (result);
+	}
+	// Sinon, retourner une copie de la chaîne originale
+	return (ft_strdup(str));
+}
+
 static char	*key_from_args(t_ast *node, int i)
 {
 	int		j;
@@ -91,10 +117,26 @@ static int	export_no_args(t_ast *node)
 	return (EXIT_SUCCESS);
 }
 
+static char	*key_from_args_cleaned(char *arg)
+{
+	int		j;
+	char	*key;
+
+	j = 0;
+	while (arg[j] && arg[j] != '=')
+		j++;
+	key = ft_calloc(j + 1, 1);
+	if (!key)
+		return (NULL);
+	ft_strlcpy(key, arg, j + 1);
+	return (key);
+}
+
 int	builtin_export(int argc, t_ast *node)
 {
 	t_list	**env_lst;
 	char	*key;
+	char	*cleaned_arg;
 	int		i;
 	int		has_equals;
 
@@ -105,26 +147,32 @@ int	builtin_export(int argc, t_ast *node)
 	i = 0;
 	while (++i < argc)
 	{
-		has_equals = (ft_strchr(node->command->args[i], '=') != NULL);
+		// NOUVEAU: Nettoyer les guillemets de l'argument
+		cleaned_arg = remove_quotes(node->command->args[i]);
+		if (!cleaned_arg)
+			return (EXIT_FAILURE);
 		
-		if (!is_valid_identifier(node->command->args[i]))
+		has_equals = (ft_strchr(cleaned_arg, '=') != NULL);
+		
+		if (!is_valid_identifier(cleaned_arg))
 		{
 			ft_printf("minishell: export: `%s': not a valid identifier\n", 
-					node->command->args[i]);
+					cleaned_arg);
+			free(cleaned_arg);
 			continue;
 		}
 		
-		key = key_from_args(node, i);
+		key = key_from_args_cleaned(cleaned_arg);
 		if (!key)
+		{
+			free(cleaned_arg);
 			return (EXIT_FAILURE);
+		}
 		
 		if (!has_equals)
 		{
-			// FIX: Pour export sans =, juste marquer comme exportée
-			// sans changer la valeur si elle existe déjà
 			if (env_get(*env_lst, key) == NULL)
 			{
-				// Variable n'existe pas, créer avec valeur vide mais exportée
 				char *export_var = ft_strjoin(key, "");
 				if (export_var)
 				{
@@ -132,14 +180,14 @@ int	builtin_export(int argc, t_ast *node)
 					free(export_var);
 				}
 			}
-			// Si elle existe déjà, ne rien faire (juste l'exporter)
 		}
 		else
 		{
 			env_delete_key(env_lst, key);
-			env_lst_add(env_lst, node->command->args[i]);
+			env_lst_add(env_lst, cleaned_arg);
 		}
 		free(key);
+		free(cleaned_arg);
 	}
 	return (EXIT_SUCCESS);
 }

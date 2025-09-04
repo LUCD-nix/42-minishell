@@ -49,7 +49,14 @@ static int	exec_get_path(t_ast *node)
 	char	*path_to_elf;
 	int		i;
 
-	// FIX: Si le chemin contient '/', ne pas utiliser PATH
+	// NOUVEAU: Vérifier si le path est vide
+	if (!node->command->path || ft_strlen(node->command->path) == 0)
+	{
+		// Ne pas afficher d'erreur pour une commande vide
+		return (-1);
+	}
+
+	// Si le chemin contient '/', ne pas utiliser PATH
 	if (ft_strchr(node->command->path, '/'))
 	{
 		if (access(node->command->path, X_OK) == 0)
@@ -104,13 +111,20 @@ int	exec_process(t_ast *process)
 	int			return_value;
 	char		**envp;
 
+	// NOUVEAU: Vérifier si la commande est vide après expansion
+	if (!process->command || !process->command->path || 
+		ft_strlen(process->command->path) == 0)
+	{
+		// Bash retourne 0 pour une commande vide
+		return (0);
+	}
+
 	return_value = -1;
 	pid = fork();
 	if (pid == -1)
 		return (-1);
 	if (pid == CHILD_PID)
 	{
-		// FIX: Gérer les erreurs dans le processus enfant
 		envp = env_lst_to_str_array(*process->env);
 		if (!envp)
 			exit(1);
@@ -132,13 +146,11 @@ int	exec_process(t_ast *process)
 			exit(1);
 		}
 		execve(process->command->path, process->command->args, envp);
-		// Si on arrive ici, execve a échoué
 		perror("execve");
 		ft_free_tab(envp);
 		exit(126);  // Command invoked cannot execute
 	}
 	waitpid(pid, &return_value, 0);
-	// FIX: Retourner le bon code de sortie
 	if (WIFEXITED(return_value))
 		return (WEXITSTATUS(return_value));
 	return (-1);

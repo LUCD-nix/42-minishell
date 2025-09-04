@@ -93,37 +93,32 @@ static int	handle_output_redirection_bash_compatible(t_parser *parser, t_ast *cm
 	if (!check(parser, T_WORD))
 	{
 		error(parser, "Expected filename after redirection");
-		return (-1);
+		return (1);  // FIX: retourner 1 au lieu de -1
 	}
 	
-	// NOUVEAU: Créer/tronquer le fichier comme bash le fait
 	flags = O_WRONLY | O_CREAT | ((redir_type == T_APPEND) ? O_APPEND : O_TRUNC);
 	temp_fd = open(parser->current->value, flags, 0644);
 	if (temp_fd == -1)
 	{
 		perror("minishell: output redirection");
-		return (-1);
+		return (1);  // FIX: retourner 1 au lieu de -1
 	}
-	close(temp_fd); // IMPORTANT: Fermer immédiatement comme bash
+	close(temp_fd);
 	
-	// Libérer l'ancien fichier de sortie s'il existe
 	if (cmd->output_file)
 	{
 		free(cmd->output_file);
 		cmd->output_file = NULL;
 	}
 	
-	// Assigner le nouveau fichier de sortie (seul le dernier sera utilisé)
 	cmd->output_file = ft_strdup(parser->current->value);
 	if (!cmd->output_file)
 	{
 		error(parser, "Memory allocation failed");
-		return (-1);
+		return (1);  // FIX: retourner 1 au lieu de -1
 	}
 	
-	// Définir le mode (> ou >>)
 	cmd->append_mode = (redir_type == T_APPEND) ? 1 : 0;
-	
 	advance(parser);
 	return (0);
 }
@@ -137,7 +132,7 @@ static int	handle_input_redirection_bash_compatible(t_parser *parser, t_ast *cmd
 	if (!check(parser, T_WORD))
 	{
 		error(parser, "Expected filename after redirection");
-		return (-1);
+		return (1);
 	}
 	
 	// NOUVEAU: Vérifier que le fichier existe et est lisible
@@ -145,7 +140,7 @@ static int	handle_input_redirection_bash_compatible(t_parser *parser, t_ast *cmd
 	if (temp_fd == -1)
 	{
 		perror("minishell: input redirection");
-		return (-1);
+		return (1);
 	}
 	close(temp_fd); // Fermer immédiatement
 	
@@ -161,7 +156,7 @@ static int	handle_input_redirection_bash_compatible(t_parser *parser, t_ast *cmd
 	if (!cmd->input_file)
 	{
 		error(parser, "Memory allocation failed");
-		return (-1);
+		return (1);
 	}
 	
 	advance(parser);
@@ -172,49 +167,77 @@ static int	handle_heredoc_new(t_parser *parser, t_ast *cmd)
 {
 	char	*delimiter;
 	char	*line;
+	char	*expanded_line;
 	int		pipe_fd[2];
 	size_t	delim_len;
+	int		should_expand;
 
 	advance(parser);
 	
 	if (!check(parser, T_WORD))
 	{
 		error(parser, "Expected delimiter after <<");
-		return (-1);
+		return (1);
 	}
 	
 	delimiter = parser->current->value;
 	delim_len = ft_strlen(delimiter);
+	
+	// NOUVEAU: Déterminer si on doit expand selon les guillemets du délimiteur
+	should_expand = 1;  // Par défaut, on expand
+	if (parser->current->quote == Q_SIMPLE || parser->current->quote == Q_DOUBLE)
+		should_expand = 0;  // Pas d'expansion si délimiteur entre guillemets
+	
 	advance(parser);
 	
-	// Créer le pipe pour heredoc
 	if (pipe(pipe_fd) == -1)
 	{
 		perror("pipe");
-		return (-1);
+		return (1);
 	}
 	
-	// Lire les lignes jusqu'au délimiteur
-	printf("heredoc> ");
-	line = get_next_line(STDIN_FILENO);
-	while (line)
+	while (1)
 	{
-		if (ft_strlen(line) == delim_len + 1 && 
-			ft_strncmp(line, delimiter, delim_len) == 0 && 
-			line[delim_len] == '\n')
+		line = readline("heredoc> ");
+		if (!line)  // Ctrl+D
+		{
+			printf("\n");
+			break;
+		}
+		
+		// Vérifier si on a atteint le délimiteur
+		if (ft_strlen(line) == delim_len && 
+			ft_strncmp(line, delimiter, delim_len) == 0)
 		{
 			free(line);
 			break;
 		}
-		write(pipe_fd[1], line, ft_strlen(line));
+		
+		// NOUVEAU: Expand les variables si nécessaire
+		if (should_expand)
+		{
+			expanded_line = expand_variables(line, *cmd->env, 0, Q_NONE);
+			if (expanded_line)
+			{
+				write(pipe_fd[1], expanded_line, ft_strlen(expanded_line));
+				free(expanded_line);
+			}
+			else
+			{
+				write(pipe_fd[1], line, ft_strlen(line));
+			}
+		}
+		else
+		{
+			write(pipe_fd[1], line, ft_strlen(line));
+		}
+		
+		write(pipe_fd[1], "\n", 1);
 		free(line);
-		printf("heredoc> ");
-		line = get_next_line(STDIN_FILENO);
 	}
 	
 	close(pipe_fd[1]);
 	
-	// Fermer l'ancien heredoc_fd s'il existe
 	if (cmd->heredoc_fd >= 0)
 		close(cmd->heredoc_fd);
 	
@@ -294,6 +317,13 @@ static char	**collect_args(t_parser *parser, int *count)
 	
 	while (check(parser, T_WORD))
 	{
+		// NOUVEAU: Ignorer les tokens vides après expansion
+		if (!parser->current->value || ft_strlen(parser->current->value) == 0)
+		{
+			advance(parser);
+			continue;
+		}
+
 		if (*count >= capacity - 1)
 		{
 			capacity *= 2;
@@ -320,17 +350,23 @@ static char	**collect_args(t_parser *parser, int *count)
 		(*count)++;
 		advance(parser);
 		
-		// NOUVEAU: S'arrêter si on rencontre une redirection
 		if (parser->current && (parser->current->type == T_REDIR_IN || 
 			parser->current->type == T_REDIR_OUT || 
 			parser->current->type == T_APPEND || 
 			parser->current->type == T_HEREDOC))
 			break;
 		
-		// S'arrêter si on rencontre un opérateur
 		if (parser->current && get_precedence(parser->current->type) > PREC_NONE)
 			break;
 	}
+	
+	// NOUVEAU: Si aucun argument valide, retourner NULL
+	if (*count == 0)
+	{
+		free(args);
+		return (NULL);
+	}
+	
 	args[*count] = NULL;
 	return (args);
 }
@@ -341,8 +377,8 @@ t_ast	*parse_command_bash_compatible(t_parser *parser, t_list **env)
 	int			argc;
 	t_command	*cmd;
 	t_ast		*node;
+	int			redir_error;
 
-	// Parser la commande de base
 	args = collect_args(parser, &argc);
 	if (!args || argc == 0)
 		return (error(parser, "Expected command"), NULL);
@@ -356,26 +392,32 @@ t_ast	*parse_command_bash_compatible(t_parser *parser, t_list **env)
 	if (!node)
 		return (free_cmd(cmd), error(parser, "Memory allocation failed"), NULL);
 	
-	// NOUVEAU: Traiter toutes les redirections en créant tous les fichiers
+	// FIX: Traiter les redirections et propager les erreurs correctement
 	while (!at_end(parser) && (parser->current->type == T_REDIR_IN || 
 			parser->current->type == T_REDIR_OUT || 
 			parser->current->type == T_APPEND || 
 			parser->current->type == T_HEREDOC))
 	{
+		redir_error = 0;
 		if (parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND)
 		{
-			if (handle_output_redirection_bash_compatible(parser, node) == -1)
-				return (free_ast(node), NULL);
+			redir_error = handle_output_redirection_bash_compatible(parser, node);
 		}
 		else if (parser->current->type == T_REDIR_IN)
 		{
-			if (handle_input_redirection_bash_compatible(parser, node) == -1)
-				return (free_ast(node), NULL);
+			redir_error = handle_input_redirection_bash_compatible(parser, node);
 		}
 		else if (parser->current->type == T_HEREDOC)
 		{
-			if (handle_heredoc_new(parser, node) == -1)
-				return (free_ast(node), NULL);
+			redir_error = handle_heredoc_new(parser, node);
+		}
+		
+		// FIX: Si erreur de redirection, marquer le nœud comme ayant une erreur
+		if (redir_error != 0)
+		{
+			// Marquer l'erreur dans le nœud pour la gestion ultérieure
+			node->fd_in = -2;  // Utiliser -2 comme marqueur d'erreur
+			break;
 		}
 	}
 	

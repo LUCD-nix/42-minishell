@@ -2,11 +2,32 @@
 
 volatile sig_atomic_t	g_signal_received = 0;
 
+static char	*remove_outer_quotes(char *str)
+{
+	int		len;
+	char	*result;
+
+	if (!str)
+		return (NULL);
+	
+	len = ft_strlen(str);
+	
+	// Si la chaîne commence et finit par des guillemets
+	if (len >= 2 && 
+		((str[0] == '"' && str[len - 1] == '"') || 
+		 (str[0] == '\'' && str[len - 1] == '\'')))
+	{
+		result = ft_substr(str, 1, len - 2);
+		return (result);
+	}
+	return (ft_strdup(str));
+}
 
 static void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 {
 	t_token	*tmp;
 	char	*expanded;
+	char	*cleaned;
 
 	tmp = tokens;
 	while (tmp)
@@ -16,6 +37,14 @@ static void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 			expanded = expand_variables(tmp->value, envp, last_status, tmp->quote);
 			if (expanded)
 			{
+				// Si le token avait des guillemets, les enlever maintenant
+				if (tmp->quote == Q_DOUBLE || tmp->quote == Q_SIMPLE)
+				{
+					cleaned = remove_outer_quotes(expanded);
+					free(expanded);
+					expanded = cleaned;
+				}
+				
 				free(tmp->value);
 				tmp->value = expanded;
 			}
@@ -42,11 +71,11 @@ static int	process_line_new(char *line, t_list **envp, int *last_status)
 	if (!tokens)
 		return (1);
 	expand_tokens(tokens, *envp, *last_status);
-	ast = parse_new(tokens, envp);  // NOUVEAU
+	ast = parse_new(tokens, envp);
 	free_token(tokens);
 	if (!ast)
-		return (*last_status = 2, 1);
-	*last_status = traverse_node_new(ast);  // NOUVEAU
+		return (*last_status = 1, 1);  // FIX: erreur de parsing = 1
+	*last_status = traverse_node_new(ast);
 	free_ast(ast);
 	return (1);
 }
@@ -67,14 +96,11 @@ int	main(int argc, char **argv, char **envp)
 	char	*line;
 	t_list	*my_envp;
 	int		last_status;
-	int		signal_status;
 
 	(void)argc;
 	(void)argv;
 	
-	// Configuration initiale des signaux
 	setup_interactive_signals();
-	
 	my_envp = env_lst_from_str_arr(envp);
 	if (!my_envp)
 		return (perror("Error: Failed to copy environment\n"), 1);
@@ -82,27 +108,19 @@ int	main(int argc, char **argv, char **envp)
 	last_status = 0;	
 	while (1)
 	{
-		// Vérifier si un signal a été reçu
-		signal_status = check_signal_status();
-		if (signal_status)
-			last_status = signal_status;
-		
+		// FIX: Ne pas vérifier les signaux ici, laisser readline les gérer
 		line = readline("$Minishell :");
 		
-		// Gestion Ctrl+D (EOF)
 		check_eof_signal(line, &my_envp);
 		
-		// Gestion ligne vide
 		if (ft_strlen(line) == 0)
 		{
 			free(line);
 			continue;
 		}
 		
-		// Ajouter à l'historique
 		add_history(line);
 		
-		// Vérification commande exit
 		if (ft_strcmp(line, "exit") == 0)
 		{
 			free(line);
@@ -110,14 +128,12 @@ int	main(int argc, char **argv, char **envp)
 			break;
 		}
 		
-		// Traitement de la ligne
 		if (!process_line_new(line, &my_envp, &last_status))
 			break;
 		
 		free(line);
 	}
 	
-	// Nettoyage final
 	ft_lstclear(&my_envp, &env_free);
 	rl_clear_history();
 	return (last_status);
