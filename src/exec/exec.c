@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <stdlib.h>
 
 int	exec_builtin(t_ast *node)
 {
@@ -36,9 +37,8 @@ int	exec_builtin(t_ast *node)
 		res = builtin_unset(argc, node);
 	else if (!ft_memcmp(node->command->path, "env", 4))
 		res = (builtin_env(argc, argv, envp));
-	// TODO :
-	// if (!ft_memcmp(node->command->path, "exit", 5))
-	// 	return(builtin_exit(argc, argv, envp));
+	if (!ft_memcmp(node->command->path, "exit", 5))
+		return(builtin_exit(node, argc, argv, envp));
 	ft_free_tab(envp);
 	return (res);
 }
@@ -52,10 +52,10 @@ static int	exec_get_path(t_ast *node)
 
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
-		return (perror("minishell : no defined PATH\n"),-1);
+		return (perror("minishell: no defined PATH\n"),-1);
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
-		return (perror("minishell, split error in PATH\n"),-1);
+		return (perror("minishell: split error in PATH\n"),-1);
 	i = -1;
 	while (path_dirs[++i])
 	{
@@ -81,18 +81,18 @@ int	exec_process(t_ast *process)
 	return_value = -1;
 	pid = fork();
 	if (pid == -1)
-		return (-1);
+		exit_and_free(process, EXIT_FAILURE, "exec: error forking process");
 	envp = env_lst_to_str_array(*process->env);
 	if (exec_get_path(process) == -1)
-		return (-1);
+		exit_and_free(process, EXIT_FAILURE, "exec: program not in PATH");
 	if (pid == CHILD_PID)
 	{
 		if (process->fd_in != STDIN_FILENO
 			&& dup2(process->fd_in, STDIN_FILENO) == -1)
-			return (-1);
+			exit_and_free(process, EXIT_FAILURE, "exec: errro duping fd");
 		if (process->fd_out != STDOUT_FILENO
 			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
-			return (-1);
+			exit_and_free(process, EXIT_FAILURE, "exec: errro duping fd");
 		execve(process->command->path, process->command->args, envp);
 	}
 	waitpid(pid, &return_value, 0);

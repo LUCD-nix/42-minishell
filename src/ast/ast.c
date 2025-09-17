@@ -9,9 +9,7 @@
 /*   Updated: 2025/08/28 15:25:18 by lucorrei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 #include "../../minishell.h"
-#include <unistd.h>
 
 t_ast	*init_ast_node(t_node_type type, t_list **env)
 {

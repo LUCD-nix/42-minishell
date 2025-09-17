@@ -151,7 +151,7 @@ int					builtin_pwd(int argc);
 int					builtin_export(int argc, t_ast *node);
 int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc,  char **argv, char **envp);
-// int					builtin_exit(int argc,  char **argv, char **envp);
+int					builtin_exit(t_ast *node, int argc, char **argv);
 
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);
@@ -204,6 +204,6 @@ char			*expand_variables(char *value, t_list *envp, int last_status, t_quote_typ
 /* Utils */
 void			ft_free_tab(char **tab);
 void			*ft_realloc(void *ptr, size_t size);
+void			exit_and_free(t_ast *node, int exit_code, char *message);
 
-#endif
-
+#endif // MINISHELL_H

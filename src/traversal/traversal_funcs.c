@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <stdlib.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 {
@@ -17,13 +18,13 @@ int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 	{
 		*saved_in = dup(STDIN_FILENO);
 		if (*saved_in == -1 || dup2(node->fd_in, STDIN_FILENO) == -1)
-			return (-1);
+			exit_and_free(node, EXIT_FAILURE, "error redirecting stdin");
 	}
 	if (node->fd_out != STDOUT_FILENO)
 	{
 		*saved_out = dup(STDOUT_FILENO);
 		if (*saved_out == -1 || dup2(node->fd_out, STDOUT_FILENO) == -1)
-			return (-1);
+			exit_and_free(node, EXIT_FAILURE, "error redirecting stdout");
 	}
 	return (0);
 }
@@ -36,18 +37,17 @@ int	traverse_builtin(t_ast *node)
 
 	saved_in = 0;
 	saved_out = 0;
-	if (traverse_redirect_builtin(node, &saved_in, &saved_out) == -1)
-		return (-1);
+	traverse_redirect_builtin(node, &saved_in, &saved_out);
 	res = exec_builtin(node);
 	if (node->fd_in != STDIN_FILENO)
 	{
 		if (dup2(saved_in, STDIN_FILENO) == -1)
-			return (-1);
+			exit_and_free(node, EXIT_FAILURE, "error restoring stdin");
 	}
 	if (node->fd_out != STDOUT_FILENO)
 	{
 		if (dup2(saved_out, STDOUT_FILENO) == -1)
-			return (-1);
+			exit_and_free(node, EXIT_FAILURE, "error restoring stdout");
 	}
 	return (res);
 }
@@ -61,21 +61,21 @@ int	traverse_pipe(t_ast *node)
 	res = -1;
 	pipe_propagate_fd(node);
 	if (pipe_create(node->left, node->right) == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error creating pipe");
 	pid_left = fork();
 	if (pid_left == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error forking process");
 	if (pid_left == CHILD_PID)
 		exit(traverse_node(node->left));
 	if (close(node->left->fd_out) == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
 	pid_right = fork();
 	if (pid_right == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error forking process");
 	if (pid_right == CHILD_PID)
 		exit(traverse_node(node->right));
 	if (close(node->right->fd_in) == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
 	waitpid(pid_left, NULL, 0);
 	waitpid(pid_right, &res, 0);
 	return (res);
@@ -108,12 +108,12 @@ int	traverse_file(t_ast *node, int flags)
 
 	file_fd = open(node->filename, flags, 0644);
 	if (file_fd == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error opening file");
 	if (node->fd_in != STDIN_FILENO
 		&& dup2(node->fd_in, file_fd) == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error redirecting output");
 	if (node->fd_out != STDOUT_FILENO
 		&& dup2(node->fd_out, file_fd) == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "error redirecting output");
 	return (file_fd);
 }

@@ -61,6 +61,20 @@ int	builtin_env(int argc, char **argv, char **envp)
 	return (EXIT_SUCCESS);
 }
 
+int	builtin_exit(t_ast *node, int argc, char **argv)
+{
+	extern int	errno;
+
+	ft_printf("exit\n");
+	if (argc > 2)
+	{
+		errno = E2BIG;
+		return (perror("minishell: exit"), -1);
+	}
+	if (argc == 1)
+		exit_and_free(node, EXIT_SUCCESS, NULL);
+	// TODO : wrap atoi to be safe and exit accordingly
+}
 // int	main(void)
 // {
 // 	extern char **environ;

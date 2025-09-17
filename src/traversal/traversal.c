@@ -11,9 +11,9 @@
 /* ************************************************************************** */
 #include "../../minishell.h"
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 
-// TODO : replace all the return (-1) with appropriate error functions
 // TODO: (a | b && c | d) < file does not propagate file to "c"
 // in BASH, and it does here, needs more testing
 void	andor_propagate_fd(t_ast *node)
@@ -52,8 +52,6 @@ int	traverse_redir(t_ast *node)
 	else
 		o_flags = O_WRONLY | O_CREAT | O_APPEND;
 	file_fd = traverse_file(node->right, o_flags);
-	if (file_fd == -1)
-		return (-1);
 	if (node->type == NODE_REDIR_IN)
 		node->left->fd_in = file_fd;
 	else
@@ -68,25 +66,26 @@ int	traverse_heredoc(t_ast *node)
 	int		tmp_file;
 	char	*line;
 	int		delim_len;
+	int		res;
 
 	delim_len = ft_strlen(node->filename);
 	tmp_file = open("tmp_file_for_heredoc", O_CREAT | O_TRUNC | O_RDWR);
 	node->left->fd_in = tmp_file;
 	if (tmp_file == -1)
-		return (-1);
+		exit_and_free(node, EXIT_FAILURE, "heredoc: tmp file error");
 	line = get_next_line(STDIN_FILENO);
 	while (ft_strncmp(line, node->filename, delim_len + 1) != '\n')
 	{
 		if (line == NULL)
-			return (-1);
+			exit_and_free(node, EXIT_FAILURE, "heredoc: stdin read error");
 		write(tmp_file, line, ft_strlen(line));
 		free(line);
 		line = get_next_line(STDIN_FILENO);
 	}
-	traverse_node(node->left);
+	res = traverse_node(node->left);
 	if (close(tmp_file) == -1 || unlink("tmp_file_for_heredoc") == -1)
-		return (-1);
-	return (0);
+		exit_and_free(node, EXIT_FAILURE, "heredoc: error closing file");
+	return (res);
 }
 
 int	traverse_node(t_ast *node)
