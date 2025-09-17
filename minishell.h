@@ -116,6 +116,7 @@ typedef struct s_ast
 	struct s_ast	*left;
 	struct s_ast	*right;
 	t_list 			**env;
+	struct s_ast	*top;
 }	t_ast;
 
 typedef struct s_parser

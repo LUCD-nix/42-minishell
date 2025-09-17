@@ -195,6 +195,15 @@ t_ast	*parse_command(t_parser *parser, t_list **env)
 	return (node);
 }
 
+void	propagate_first_node(t_ast	*first, t_ast *current)
+{
+	if (current == NULL)
+		return ;
+	current->top = first;
+	propagate_first_node(first, current->left);
+	propagate_first_node(first, current->right);
+}
+
 t_ast	*parse(t_token *tokens, t_list **env)
 {
 	t_parser	parser;
@@ -212,6 +221,7 @@ t_ast	*parse(t_token *tokens, t_list **env)
 			free_ast(result);
 		return (NULL);
 	}
+	propagate_first_node(result, result);
 	return (result);
 }
 
