@@ -18,7 +18,6 @@ t_env	env_from_str(char *str)
 	char	*key;
 	char	*value;
 
-	// TODO : temp, ensure that export, e.g, TEST="$USER" is expanded correctly
 	cursor = ft_strchr(str, '=');
 	if (cursor == NULL)
 	{

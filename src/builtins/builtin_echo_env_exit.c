@@ -61,7 +61,7 @@ int	builtin_env(int argc, char **argv, char **envp)
 	return (EXIT_SUCCESS);
 }
 
-static int atoi_wrapper(char *str, int *res)
+static int	atoi_wrapper(char *str, int *res)
 {
 	int	i;
 

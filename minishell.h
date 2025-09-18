@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   minishell.h                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/18 17:06:39 by lucorrei          #+#    #+#             */
+/*   Updated: 2025/09/18 17:06:41 by lucorrei         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
@@ -115,7 +127,7 @@ typedef struct s_ast
 	int				fd_out;
 	struct s_ast	*left;
 	struct s_ast	*right;
-	t_list 			**env;
+	t_list			**env;
 	struct s_ast	*top;
 }	t_ast;
 
@@ -132,7 +144,8 @@ void			free_lexemes(t_lexeme *lex);
 char			*read_line(void);
 
 /* Tokens */
-t_token			*init_token(const char *line, t_token_type type, t_quote_type quote);
+t_token			*init_token(const char *line, t_token_type type,
+					t_quote_type quote);
 void			free_token(t_token *token);
 t_token			*lexer_to_token(t_lexeme *lex);
 t_token_type	get_token_type(char *token);
@@ -145,45 +158,45 @@ void			free_cmd(t_command *cmd);
 t_command		*init_cmd(char **args);
 
 /*---Built-ins---*/
-int					builtin_echo(int argc,  char **argv);
-int					builtin_cd(int argc, t_ast *node);
-int					builtin_pwd(int argc);
-int					builtin_export(int argc, t_ast *node);
-int					builtin_unset(int argc, t_ast *node);
-int					builtin_env(int argc,  char **argv, char **envp);
-int					builtin_exit(t_ast *node, int argc, char **argv,
-						char **envp);
+int				builtin_echo(int argc, char **argv);
+int				builtin_cd(int argc, t_ast *node);
+int				builtin_pwd(int argc);
+int				builtin_export(int argc, t_ast *node);
+int				builtin_unset(int argc, t_ast *node);
+int				builtin_env(int argc, char **argv, char **envp);
+int				builtin_exit(t_ast *node, int argc, char **argv,
+					char **envp);
 
 /*--Env--*/
-t_list				*env_lst_add(t_list **lst, char *str);
-t_list				*env_lst_from_str_arr(char **to_copy);
-char				**env_lst_to_str_array(t_list *env);
-char				*env_get(t_list *env, char *key);
-int					env_set(t_list *env, char *key, char *value);
-void				env_delete_key(t_list **head, char *key);
-void				env_free(void *ptr);
+t_list			*env_lst_add(t_list **lst, char *str);
+t_list			*env_lst_from_str_arr(char **to_copy);
+char			**env_lst_to_str_array(t_list *env);
+char			*env_get(t_list *env, char *key);
+int				env_set(t_list *env, char *key, char *value);
+void			env_delete_key(t_list **head, char *key);
+void			env_free(void *ptr);
 
 /*---Pipes---*/
-int					pipe_create(t_ast *writer, t_ast *reader);
-void				pipe_propagate_fd(t_ast *node);
-int					pipe_from_file(char *filename);
+int				pipe_create(t_ast *writer, t_ast *reader);
+void			pipe_propagate_fd(t_ast *node);
+int				pipe_from_file(char *filename);
 
-/*---Traversal--*/
-int					traverse_node(t_ast *node);
-int					traverse_file(t_ast *node, int flags);
-int					traverse_pipe(t_ast *node);
-int					traverse_builtin(t_ast *node);
-int					traverse_andor(t_ast *node, t_node_type type);
-void				andor_propagate_fd(t_ast *node);
+/*---Traversal---*/
+int				traverse_node(t_ast *node);
+int				traverse_file(t_ast *node, int flags);
+int				traverse_pipe(t_ast *node);
+int				traverse_builtin(t_ast *node);
+int				traverse_andor(t_ast *node, t_node_type type);
+void			andor_propagate_fd(t_ast *node);
 
 /*---Execution---*/
-int					exec_process(t_ast *command);
-int					exec_builtin(t_ast *builtin);
+int				exec_process(t_ast *command);
+int				exec_builtin(t_ast *builtin);
 
 /* Pratt Parser */
 t_ast			*parse(t_token *tokens, t_list **env);
 t_ast			*parse_expression(t_parser *parser, t_precedence precedence,
-	t_list **env);
+					t_list **env);
 t_ast			*parse_primary(t_parser *parser, t_list **env);
 t_ast			*parse_command(t_parser *parser, t_list **env);
 t_ast			*parse_subshell(t_parser *parser, t_list **env);
@@ -199,7 +212,8 @@ int				at_end(t_parser *parser);
 
 /* Environment */
 char			*get_env_value(char *key, t_list *envp);
-char			*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote);
+char			*expand_variables(char *value, t_list *envp,
+					int last_status, t_quote_type quote);
 // void			print_tokens(t_token *tokens);
 //
 /* Utils */

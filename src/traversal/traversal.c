@@ -104,7 +104,7 @@ int	traverse_node(t_ast *node)
 	else if (type == NODE_PIPE)
 		res = traverse_pipe(node);
 	else if (type == NODE_REDIR_IN
-			|| type == NODE_REDIR_OUT || type == NODE_APPEND)
+		|| type == NODE_REDIR_OUT || type == NODE_APPEND)
 		res = traverse_redir(node);
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);
