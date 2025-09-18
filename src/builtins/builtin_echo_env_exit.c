@@ -96,7 +96,7 @@ int	builtin_exit(t_ast *node, int argc, char **argv, char **envp)
 	if (atoi_wrapper(argv[1], &exit_code) != 0)
 	{
 		errno = EINVAL;
-		exit_and_free(node, EXIT_FAILURE, " exit : numeric argument required");
+		exit_and_free(node, EXIT_FAILURE, "exit: numeric argument required");
 	}
 	exit_and_free(node, exit_code, NULL);
 	return (EXIT_SUCCESS);

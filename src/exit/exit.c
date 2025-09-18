@@ -15,7 +15,7 @@ void	exit_and_free(t_ast *node, int exit_code, char *message)
 {
 	if (exit_code != EXIT_SUCCESS && message != NULL)
 	{
-		ft_printf("minishell :");
+		ft_printf("minishell: ");
 		perror(message);
 	}
 	ft_lstclear(node->env, &env_free);

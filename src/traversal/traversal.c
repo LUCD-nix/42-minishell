@@ -82,7 +82,9 @@ int	traverse_heredoc(t_ast *node)
 		free(line);
 		line = get_next_line(STDIN_FILENO);
 	}
+	lseek(tmp_file, 0, SEEK_SET);
 	res = traverse_node(node->left);
+	free(line);
 	if (close(tmp_file) == -1 || unlink("tmp_file_for_heredoc") == -1)
 		exit_and_free(node, EXIT_FAILURE, "heredoc: error closing file");
 	return (res);

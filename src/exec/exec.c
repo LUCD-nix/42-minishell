@@ -38,7 +38,7 @@ int	exec_builtin(t_ast *node)
 	else if (!ft_memcmp(node->command->path, "env", 4))
 		res = (builtin_env(argc, argv, envp));
 	if (!ft_memcmp(node->command->path, "exit", 5))
-		return(builtin_exit(node, argc, argv, envp));
+		return (builtin_exit(node, argc, argv, envp));
 	ft_free_tab(envp);
 	return (res);
 }
@@ -52,10 +52,10 @@ static int	exec_get_path(t_ast *node)
 
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
-		return (perror("minishell: no defined PATH\n"),-1);
+		return (perror("minishell: no defined PATH\n"), -1);
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
-		return (perror("minishell: split error in PATH\n"),-1);
+		return (perror("minishell: split error in PATH\n"), -1);
 	i = -1;
 	while (path_dirs[++i])
 	{
@@ -69,7 +69,7 @@ static int	exec_get_path(t_ast *node)
 		}
 		free(path_to_elf);
 	}
-	return (ft_free_tab(path_dirs), perror("Error : program not in PATH"), -1);
+	return (ft_free_tab(path_dirs), perror("Error: program not in PATH"), -1);
 }
 
 int	exec_process(t_ast *process)
@@ -83,16 +83,16 @@ int	exec_process(t_ast *process)
 	if (pid == -1)
 		exit_and_free(process, EXIT_FAILURE, "exec: error forking process");
 	envp = env_lst_to_str_array(*process->env);
-	if (exec_get_path(process) == -1)
-		exit_and_free(process, EXIT_FAILURE, "exec: program not in PATH");
 	if (pid == CHILD_PID)
 	{
-		if (process->fd_in != STDIN_FILENO
-			&& dup2(process->fd_in, STDIN_FILENO) == -1)
-			exit_and_free(process, EXIT_FAILURE, "exec: error duping fd");
-		if (process->fd_out != STDOUT_FILENO
-			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
-			exit_and_free(process, EXIT_FAILURE, "exec: error duping fd");
+		if ((exec_get_path(process) == -1)
+			|| (process->fd_in != STDIN_FILENO
+				&& dup2(process->fd_in, STDIN_FILENO) == -1)
+			|| (process->fd_out != STDOUT_FILENO
+				&& dup2(process->fd_out, STDOUT_FILENO) == -1))
+			return (ft_free_tab(envp),
+				exit_and_free(process, EXIT_FAILURE, "exec: Error setting up"),
+				EXIT_FAILURE);
 		execve(process->command->path, process->command->args, envp);
 	}
 	waitpid(pid, &return_value, 0);
