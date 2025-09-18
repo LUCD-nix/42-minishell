@@ -66,14 +66,14 @@ int	traverse_pipe(t_ast *node)
 	if (pid_left == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
 	if (pid_left == CHILD_PID)
-		exit(traverse_node(node->left));
+		exit_and_free(node->left, traverse_node(node->left), NULL);
 	if (close(node->left->fd_out) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
 	pid_right = fork();
 	if (pid_right == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
 	if (pid_right == CHILD_PID)
-		exit(traverse_node(node->right));
+		exit_and_free(node->right, traverse_node(node->right), NULL);
 	if (close(node->right->fd_in) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
 	waitpid(pid_left, NULL, 0);
