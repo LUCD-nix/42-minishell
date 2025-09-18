@@ -1,21 +1,22 @@
 NAME = minishell
 
-CFILES = src/ast/ast.c \
-	src/ast/parser.c \
-	src/ast/pratt_parser.c \
-	src/builtins/builtin_cd_pwd.c \
-	src/builtins/builtin_echo_env.c \
+CFILES = src/ast/ast.c                  \
+	src/ast/parser.c                    \
+	src/ast/pratt_parser.c              \
+	src/builtins/builtin_cd_pwd.c       \
+	src/builtins/builtin_echo_env_exit.c\
 	src/builtins/builtin_export_unset.c \
-	src/envp/env.c \
-	src/envp/envp.c \
-	src/envp/env_init_append.c \
-	src/exec/exec.c \
-	src/lexer/lexer.c \
-	src/main.c \
-	src/pipes/pipes.c \
-	src/token/token.c \
-	src/token/utils.c \
-	src/traversal/traversal.c \
+	src/envp/env.c                      \
+	src/envp/envp.c                     \
+	src/envp/env_init_append.c          \
+	src/exec/exec.c                     \
+	src/exit/exit.c                     \
+	src/lexer/lexer.c                   \
+	src/main.c                          \
+	src/pipes/pipes.c                   \
+	src/token/token.c                   \
+	src/token/utils.c                   \
+	src/traversal/traversal.c           \
 	src/traversal/traversal_funcs.c
 
 OBJS := $(CFILES:.c=.o)

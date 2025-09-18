@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   builtin_echo_env.c                                 :+:      :+:    :+:   */
+/*   builtin_echo_env_exit.c                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -61,10 +61,30 @@ int	builtin_env(int argc, char **argv, char **envp)
 	return (EXIT_SUCCESS);
 }
 
-int	builtin_exit(t_ast *node, int argc, char **argv)
+static int atoi_wrapper(char *str, int *res)
+{
+	int	i;
+
+	i = -1;
+	if (*str == '+' || *str == '-')
+		i++;
+	while (str[++i])
+	{
+		if (!ft_isdigit(str[i]))
+			return (1);
+	}
+	if (ft_atoi(str) & ~255)
+		return (1);
+	*res = ft_atoi(str);
+	return (0);
+}
+
+int	builtin_exit(t_ast *node, int argc, char **argv, char **envp)
 {
 	extern int	errno;
+	int			exit_code;
 
+	ft_free_tab(envp);
 	ft_printf("exit\n");
 	if (argc > 2)
 	{
@@ -73,7 +93,13 @@ int	builtin_exit(t_ast *node, int argc, char **argv)
 	}
 	if (argc == 1)
 		exit_and_free(node, EXIT_SUCCESS, NULL);
-	// TODO : wrap atoi to be safe and exit accordingly
+	if (atoi_wrapper(argv[1], &exit_code) != 0)
+	{
+		errno = EINVAL;
+		exit_and_free(node, EXIT_FAILURE, " exit : numeric argument required");
+	}
+	exit_and_free(node, exit_code, NULL);
+	return (EXIT_SUCCESS);
 }
 // int	main(void)
 // {

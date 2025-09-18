@@ -151,7 +151,8 @@ int					builtin_pwd(int argc);
 int					builtin_export(int argc, t_ast *node);
 int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc,  char **argv, char **envp);
-int					builtin_exit(t_ast *node, int argc, char **argv);
+int					builtin_exit(t_ast *node, int argc, char **argv,
+						char **envp);
 
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);

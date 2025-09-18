@@ -89,10 +89,10 @@ int	exec_process(t_ast *process)
 	{
 		if (process->fd_in != STDIN_FILENO
 			&& dup2(process->fd_in, STDIN_FILENO) == -1)
-			exit_and_free(process, EXIT_FAILURE, "exec: errro duping fd");
+			exit_and_free(process, EXIT_FAILURE, "exec: error duping fd");
 		if (process->fd_out != STDOUT_FILENO
 			&& dup2(process->fd_out, STDOUT_FILENO) == -1)
-			exit_and_free(process, EXIT_FAILURE, "exec: errro duping fd");
+			exit_and_free(process, EXIT_FAILURE, "exec: error duping fd");
 		execve(process->command->path, process->command->args, envp);
 	}
 	waitpid(pid, &return_value, 0);

@@ -4,3 +4,4 @@ a.out
 .*.sw*
 *.o
 minishell
+rl.supp

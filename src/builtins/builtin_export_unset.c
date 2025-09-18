@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <stdlib.h>
 
 static char	*key_from_args(t_ast *node, int i)
 {
@@ -40,7 +41,7 @@ int	builtin_unset(int argc, t_ast *node)
 	{
 		key = key_from_args(node, i);
 		if (key == NULL)
-			return (EXIT_FAILURE);
+			return (EXIT_SUCCESS);
 		env_delete_key(env_lst, key);
 		free(key);
 	}
