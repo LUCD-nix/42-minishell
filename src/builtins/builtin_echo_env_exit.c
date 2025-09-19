@@ -29,7 +29,7 @@ int	builtin_echo(int argc, char **argv)
 		i++;
 	while (i < argc)
 	{
-		if (ft_printf("%s", argv[i]) < 0)
+		if (ft_printf("%s ", argv[i]) < 0)
 			return (EXIT_FAILURE);
 		i++;
 	}
