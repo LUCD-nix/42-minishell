@@ -76,6 +76,7 @@ int	traverse_heredoc(t_ast *node)
 		free(line);
 		line = get_next_line(STDIN_FILENO);
 	}
+	// TODO : change this to use another open() call
 	lseek(tmp_file, 0, SEEK_SET);
 	res = traverse_node(node->left);
 	free(line);

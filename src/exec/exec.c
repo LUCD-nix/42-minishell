@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 #include "../../minishell.h"
 #include <stdlib.h>
+#include <unistd.h>
 
 int	exec_builtin(t_ast *node)
 {
@@ -43,13 +44,22 @@ int	exec_builtin(t_ast *node)
 	return (res);
 }
 
+static int	exec_abs_path(t_ast *node)
+{
+	if (access(node->command->path, X_OK) == 0)
+		return (0);
+	perror("minishell");
+	return (1);
+}
+
 static int	exec_get_path(t_ast *node)
 {
 	char	**path_dirs;
 	char	*path;
-	char	*path_to_elf;
 	int		i;
 
+	if (*node->command->path == '.' || *node->command->path == '/')
+		return (exec_abs_path(node));
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
 		return (perror("minishell: no defined PATH\n"), -1);
@@ -59,24 +69,24 @@ static int	exec_get_path(t_ast *node)
 	i = -1;
 	while (path_dirs[++i])
 	{
-		path_to_elf = ft_strjoin(path_dirs[i], "/");
-		path_to_elf = ft_strjoin_free_first(path_to_elf, node->command->path);
-		if (access(path_to_elf, X_OK) == 0)
+		path = ft_strjoin(path_dirs[i], "/");
+		path = ft_strjoin_free_first(path, node->command->path);
+		if (access(path, X_OK) == 0)
 		{
 			free(node->command->path);
-			node->command->path = path_to_elf;
+			node->command->path = path;
 			return (ft_free_tab(path_dirs), 0);
 		}
-		free(path_to_elf);
+		free(path);
 	}
 	return (ft_free_tab(path_dirs), perror("Error: program not in PATH"), -1);
 }
 
 int	exec_process(t_ast *process)
 {
-	pid_t		pid;
-	int			return_value;
-	char		**envp;
+	pid_t	pid;
+	int		return_value;
+	char	**envp;
 
 	return_value = -1;
 	pid = fork();
@@ -85,7 +95,7 @@ int	exec_process(t_ast *process)
 	envp = env_lst_to_str_array(*process->env);
 	if (pid == CHILD_PID)
 	{
-		if ((exec_get_path(process) == -1)
+		if ((exec_get_path(process) != 0)
 			|| (process->fd_in != STDIN_FILENO
 				&& dup2(process->fd_in, STDIN_FILENO) == -1)
 			|| (process->fd_out != STDOUT_FILENO
