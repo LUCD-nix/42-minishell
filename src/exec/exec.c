@@ -13,6 +13,20 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+static int	exec_builtin2(t_ast *node, int argc, char **argv, char **envp)
+{
+	int	res;
+
+	res = -1;
+	if (!ft_memcmp(node->command->path, "unset", 6))
+		res = builtin_unset(argc, node);
+	else if (!ft_memcmp(node->command->path, "env", 4))
+		res = (builtin_env(argc, argv, envp));
+	if (!ft_memcmp(node->command->path, "exit", 5))
+		return (builtin_exit(node, argc, argv, envp));
+	return (res);
+}
+
 int	exec_builtin(t_ast *node)
 {
 	int		argc;
@@ -34,12 +48,8 @@ int	exec_builtin(t_ast *node)
 		res = builtin_pwd(argc);
 	else if (!ft_memcmp(node->command->path, "export", 7))
 		res = builtin_export(argc, node);
-	else if (!ft_memcmp(node->command->path, "unset", 6))
-		res = builtin_unset(argc, node);
-	else if (!ft_memcmp(node->command->path, "env", 4))
-		res = (builtin_env(argc, argv, envp));
-	if (!ft_memcmp(node->command->path, "exit", 5))
-		return (builtin_exit(node, argc, argv, envp));
+	else
+		res = exec_builtin2(node, argc, argv, envp);
 	ft_free_tab(envp);
 	return (res);
 }
@@ -74,8 +84,7 @@ static int	exec_get_path(t_ast *node)
 		if (access(path, X_OK) == 0)
 		{
 			free(node->command->path);
-			node->command->path = path;
-			return (ft_free_tab(path_dirs), 0);
+			return (node->command->path = path, ft_free_tab(path_dirs), 0);
 		}
 		free(path);
 	}
