@@ -27,15 +27,9 @@ void	andor_propagate_fd(t_ast *node)
 void	redir_propagate_fd(t_ast *node)
 {
 	if (node->type == NODE_REDIR_IN)
-	{
-		node->right->fd_in = node->fd_in;
 		node->left->fd_out = node->fd_out;
-	}
 	else
-	{
 		node->left->fd_in = node->fd_in;
-		node->right->fd_out = node->fd_out;
-	}
 }
 
 int	traverse_redir(t_ast *node)
@@ -51,7 +45,7 @@ int	traverse_redir(t_ast *node)
 		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
 	else
 		o_flags = O_WRONLY | O_CREAT | O_APPEND;
-	file_fd = traverse_file(node->right, o_flags);
+	file_fd = traverse_file(node, o_flags);
 	if (node->type == NODE_REDIR_IN)
 		node->left->fd_in = file_fd;
 	else
