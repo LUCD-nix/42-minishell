@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <asm-generic/errno-base.h>
 
 static int	get_home_dir(char *buf, t_list *env)
 {
@@ -24,7 +25,7 @@ static int	get_home_dir(char *buf, t_list *env)
 
 static int	chdir_wrapper(char *to_change, t_list *env)
 {
-	int		res;
+	int	res;
 
 	env_set(env, "OLDPWD", getcwd(NULL, 0));
 	res = chdir(to_change);
@@ -33,18 +34,37 @@ static int	chdir_wrapper(char *to_change, t_list *env)
 	return (res);
 }
 
+static int	cd_dash(t_list *env)
+{
+	int		res;
+	char	*old;
+	char	*current;
+
+	old = env_get(env, "OLDPWD");
+	current = ft_strdup(env_get(env, "PWD"));
+	res = chdir(old);
+	if (res == 0)
+	{
+		env_set(env, "PWD", getcwd(NULL, 0));
+		env_set(env, "OLDPWD", current);
+		return (0);
+	}
+	return (1);
+}
+
 int	builtin_cd(int argc, t_ast *node)
 {
 	static char	home[PATH_MAX] = {0};
-	t_list		*env;
+	t_list		**env;
+	extern int	errno;
 
-	env = *node->env;
-	if (!*home && get_home_dir(home, env) == 1)
+	env = node->env;
+	if (!*home && get_home_dir(home, *env) == 1)
 		return (EXIT_FAILURE);
 	if (argc > 2)
 	{
-		// TODO : implement print to stderror
-		ft_printf("cd : Too many arguments");
+		errno = E2BIG;
+		perror("minishell: cd");
 		return (-1);
 	}
 	if (argc == 1)
@@ -53,11 +73,11 @@ int	builtin_cd(int argc, t_ast *node)
 	{
 		if (ft_memcmp("-", node->command->args[1], 2) == 0)
 		{
-			if (env_get(env, "OLDPWD") == NULL)
+			if (env_get(*env, "OLDPWD") == NULL)
 				return (ft_printf("cd : OLDPWD not set\n"), EXIT_FAILURE);
-			return (chdir_wrapper(ft_strdup(env_get(env, "OLDPWD")), env));
+			return (cd_dash(*env));
 		}
-		return (chdir_wrapper(node->command->args[1], env));
+		return (chdir_wrapper(node->command->args[1], *env));
 	}
 }
 
