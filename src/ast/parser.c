@@ -36,65 +36,105 @@ static t_ast	*parse_binary(t_parser *parser, t_ast *left, t_token_type op,
 	return (node);
 }
 
-static t_ast	*parse_redirection(t_parser *parser, t_ast *left, t_list **env)
+static t_ast *parse_single_redirection(t_parser *parser, t_list **env)
 {
-	t_token_type	redir_type;
-	t_ast			*redir_node;
+    t_token_type redir_type;
+    t_ast *redir_node;
 
-	redir_type = parser->current->type;
-	advance(parser);
-	if (!check(parser, T_WORD))
-		return (error(parser, "Expected filename after redirection"), left);
-	if (redir_type == T_REDIR_IN)
-		redir_node = init_ast_node(NODE_REDIR_IN, env);
-	else if (redir_type == T_REDIR_OUT)
-		redir_node = init_ast_node(NODE_REDIR_OUT, env);
-	else if (redir_type == T_APPEND)
-		redir_node = init_ast_node(NODE_APPEND, env);
-	else if (redir_type == T_HEREDOC)
-		redir_node = init_ast_node(NODE_HEREDOC, env);
-	else
-		return (error(parser, "Unknown redirection type"), left);
-	if (!redir_node)
-		return (error(parser, "Memory allocation failed"), left);
-	redir_node->filename = ft_strdup(parser->current->value);
-	if (!redir_node->filename)
-		return (free_ast(redir_node), error(parser, "Memory allocation failed"), left);
-	redir_node->left = left;
-	advance(parser);
-	return (redir_node);
+    redir_type = parser->current->type;
+    advance(parser);
+    if (!check(parser, T_WORD))
+        return (error(parser, "Expected filename after redirection"), NULL);
+
+    if (redir_type == T_REDIR_IN)
+        redir_node = init_ast_node(NODE_REDIR_IN, env);
+    else if (redir_type == T_REDIR_OUT)
+        redir_node = init_ast_node(NODE_REDIR_OUT, env);
+    else if (redir_type == T_APPEND)
+        redir_node = init_ast_node(NODE_APPEND, env);
+    else if (redir_type == T_HEREDOC)
+        redir_node = init_ast_node(NODE_HEREDOC, env);
+    else
+        return (error(parser, "Unknown redirection type"), NULL);
+
+    if (!redir_node)
+        return (error(parser, "Memory allocation failed"), NULL);
+
+    redir_node->filename = ft_strdup(parser->current->value);
+    if (!redir_node->filename)
+        return (free_ast(redir_node), error(parser, "Memory allocation failed"), NULL);
+
+    advance(parser);
+    return (redir_node);
 }
 
-t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
-						t_list **env)
+static t_ast *parse_all_redirections(t_parser *parser, t_ast *left, t_list **env)
 {
-	t_ast			*left;
-	t_token_type	op_type;
+    t_ast *first_redir = NULL;
+    t_ast *current_redir = NULL;
+    t_ast *new_redir;
 
-	left = parse_primary(parser, env);
-	if (!left)
-		return (NULL);
-	while (!at_end(parser) && precedence <= get_precedence(parser->current->type))
-	{
-		op_type = parser->current->type;
-		if (op_type == T_REDIR_IN || op_type == T_REDIR_OUT
-			|| op_type == T_APPEND || op_type == T_HEREDOC)
-		{
-			left = parse_redirection(parser, left, env);
-		}
-		else if (op_type == T_PIPE || op_type == T_AND || op_type == T_OR)
-		{
-			advance(parser);
-			left = parse_binary(parser, left, op_type, env);
-		}
-		else
-		{
-			break ;
-		}
-		if (!left)
-			break ;
-	}
-	return (left);
+    while (parser->current && (parser->current->type == T_REDIR_IN || 
+           parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND || 
+           parser->current->type == T_HEREDOC))
+    {
+        new_redir = parse_single_redirection(parser, env);
+        if (!new_redir)
+        {
+            if (first_redir)
+                free_ast(first_redir);
+            return (NULL);
+        }
+
+        if (!first_redir)
+        {
+            first_redir = new_redir;
+            first_redir->left = left;
+            current_redir = first_redir;
+        }
+        else
+        {
+            current_redir->right = new_redir;
+            current_redir = new_redir;
+        }
+		current_redir->right = NULL;
+    }
+
+    return (first_redir);
+}
+
+t_ast *parse_expression(t_parser *parser, t_precedence precedence, t_list **env)
+{
+    t_ast *left;
+    t_token_type op_type;
+
+    left = parse_primary(parser, env);
+    if (!left)
+        return (NULL);
+
+    while (!at_end(parser) && precedence <= get_precedence(parser->current->type))
+    {
+        op_type = parser->current->type;
+        
+        // Si on trouve une redirection, parser TOUTES les redirections consécutives
+        if (op_type == T_REDIR_IN || op_type == T_REDIR_OUT ||
+            op_type == T_APPEND || op_type == T_HEREDOC)
+        {
+            left = parse_all_redirections(parser, left, env);
+        }
+        else if (op_type == T_PIPE || op_type == T_AND || op_type == T_OR)
+        {
+            advance(parser);
+            left = parse_binary(parser, left, op_type, env);
+        }
+        else
+        {
+            break;
+        }
+        if (!left)
+            break;
+    }
+    return (left);
 }
 
 t_ast	*parse_primary(t_parser *parser, t_list **env)
