@@ -109,10 +109,12 @@ int	traverse_file(t_ast *node, int flags)
 	file_fd = open(node->filename, flags, 0644);
 	if (file_fd == -1)
 		exit_and_free(node, EXIT_FAILURE, "error opening file");
-	if (node->fd_in != STDIN_FILENO
+	if (node->type == NODE_REDIR_IN
+		&& node->fd_in != STDIN_FILENO
 		&& dup2(node->fd_in, file_fd) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error redirecting output");
-	if (node->fd_out != STDOUT_FILENO
+	if (node->type == NODE_REDIR_OUT
+		&& node->fd_out != STDOUT_FILENO
 		&& dup2(node->fd_out, file_fd) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error redirecting output");
 	return (file_fd);
