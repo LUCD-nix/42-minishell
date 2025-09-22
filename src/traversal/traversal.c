@@ -10,51 +10,15 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
 
-// TODO: (a | b && c | d) < file does not propagate file to "c"
-// in BASH, and it does here, needs more testing
 void	andor_propagate_fd(t_ast *node)
 {
+// TODO: (a | b && c | d) < file does not propagate file to "c"
+// in BASH, and it does here, needs more testing
 	node->left->fd_in = node->fd_in;
 	node->left->fd_out = node->fd_out;
 	node->right->fd_in = node->fd_in;
 	node->right->fd_out = node->fd_out;
-}
-
-void	redir_propagate_fd(t_ast *node, int file_fd)
-{
-	if (node->type == NODE_REDIR_IN)
-	{
-		node->left->fd_in = file_fd;
-		node->left->fd_out = node->fd_out;
-	}
-	else
-	{
-		node->left->fd_out = file_fd;
-		node->left->fd_in = node->fd_in;
-	}
-}
-
-int	traverse_redir(t_ast *node)
-{
-	int	file_fd;
-	int	o_flags;
-	int	res;
-
-	if (node->type == NODE_REDIR_IN)
-		o_flags = O_RDONLY;
-	else if (node->type == NODE_REDIR_OUT)
-		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
-	else
-		o_flags = O_WRONLY | O_CREAT | O_APPEND;
-	file_fd = traverse_file(node, o_flags);
-	redir_propagate_fd(node, file_fd);
-	res = traverse_node(node->left);
-	close(file_fd);
-	return (res);
 }
 
 int	traverse_heredoc(t_ast *node)
@@ -84,6 +48,45 @@ int	traverse_heredoc(t_ast *node)
 	free(line);
 	if (close(tmp_file) == -1 || unlink("tmp_file_for_heredoc") == -1)
 		exit_and_free(node, EXIT_FAILURE, "heredoc: error closing file");
+	return (res);
+}
+
+void	redir_propagate_fd(t_ast *node, int file_fd)
+{
+	if (node->type == NODE_REDIR_IN)
+	{
+		node->left->fd_in = file_fd;
+		node->left->fd_out = node->fd_out;
+		if (node->fd_in != STDIN_FILENO
+			&& dup2(node->fd_in, file_fd) == -1)
+			exit_and_free(node, EXIT_FAILURE, "error redirecting input");
+	}
+	else
+	{
+		node->left->fd_out = file_fd;
+		node->left->fd_in = node->fd_in;
+		if (node->fd_out != STDOUT_FILENO
+			&& dup2(node->fd_out, file_fd) == -1)
+			exit_and_free(node, EXIT_FAILURE, "error redirecting output");
+	}
+}
+
+int	traverse_redir(t_ast *node)
+{
+	int	file_fd;
+	int	o_flags;
+	int	res;
+
+	if (node->type == NODE_REDIR_IN)
+		o_flags = O_RDONLY;
+	else if (node->type == NODE_REDIR_OUT)
+		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
+	else
+		o_flags = O_WRONLY | O_CREAT | O_APPEND;
+	file_fd = traverse_file(node, o_flags);
+	redir_propagate_fd(node, file_fd);
+	res = traverse_node(node->left);
+	close(file_fd);
 	return (res);
 }
 
