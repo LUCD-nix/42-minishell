@@ -1,6 +1,6 @@
 #include "../minishell.h"
 
-volatile sig_atomic_t	g_signal_received = 0;
+int g_signal_received = 0;
 
 static void	handle_signal(int sig)
 {

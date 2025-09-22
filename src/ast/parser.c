@@ -70,69 +70,69 @@ static t_ast *parse_single_redirection(t_parser *parser, t_list **env)
 
 
 
-static int	has_input_redirections(t_ast *node)
-{
-	while (node && (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND
-			|| node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC))
-	{
-		if (node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC)
-			return (1);
-		node = node->left;
-	}
-	return (0);
-}
+// static int	has_input_redirections(t_ast *node)
+// {
+// 	while (node && (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND
+// 			|| node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC))
+// 	{
+// 		if (node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC)
+// 			return (1);
+// 		node = node->left;
+// 	}
+// 	return (0);
+// }
 
-static int	count_output_redirections(t_ast *node)
-{
-	int	count;
-
-	count = 0;
-	while (node && (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND
-			|| node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC))
-	{
-		if (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND)
-			count++;
-		node = node->left;
-	}
-	return (count);
-}
-
-static t_ast	*find_last_output_redir(t_ast *node)
-{
-	t_ast	*last_output;
-
-	last_output = NULL;
-	while (node && (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND
-			|| node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC))
-	{
-		if (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND)
-			last_output = node;
-		node = node->left;
-	}
-	return (last_output);
-}
-
-static void	move_last_output_to_top(t_ast **root)
-{
-	t_ast	*last_output;
-	t_ast	*temp;
-	t_ast	*prev;
-
-	last_output = find_last_output_redir(*root);
-	if (!last_output || last_output == *root)
-		return ;
-	temp = *root;
-	prev = NULL;
-	while (temp && temp != last_output)
-	{
-		prev = temp;
-		temp = temp->left;
-	}
-	if (prev)
-		prev->left = last_output->left;
-	last_output->left = *root;
-	*root = last_output;
-}
+// static int	count_output_redirections(t_ast *node)
+// {
+// 	int	count;
+//
+// 	count = 0;
+// 	while (node && (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND
+// 			|| node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC))
+// 	{
+// 		if (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND)
+// 			count++;
+// 		node = node->left;
+// 	}
+// 	return (count);
+// }
+//
+// static t_ast	*find_last_output_redir(t_ast *node)
+// {
+// 	t_ast	*last_output;
+//
+// 	last_output = NULL;
+// 	while (node && (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND
+// 			|| node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC))
+// 	{
+// 		if (node->type == NODE_REDIR_OUT || node->type == NODE_APPEND)
+// 			last_output = node;
+// 		node = node->left;
+// 	}
+// 	return (last_output);
+// }
+//
+// static void	move_last_output_to_top(t_ast **root)
+// {
+// 	t_ast	*last_output;
+// 	t_ast	*temp;
+// 	t_ast	*prev;
+//
+// 	last_output = find_last_output_redir(*root);
+// 	if (!last_output || last_output == *root)
+// 		return ;
+// 	temp = *root;
+// 	prev = NULL;
+// 	while (temp && temp != last_output)
+// 	{
+// 		prev = temp;
+// 		temp = temp->left;
+// 	}
+// 	if (prev)
+// 		prev->left = last_output->left;
+// 	last_output->left = *root;
+// 	*root = last_output;
+// }
 
 static t_ast	*reorganize_redirections(t_ast *node)
 {
@@ -141,11 +141,9 @@ static t_ast	*reorganize_redirections(t_ast *node)
 	if (node->type != NODE_REDIR_IN && node->type != NODE_REDIR_OUT
 		&& node->type != NODE_APPEND && node->type != NODE_HEREDOC)
 		return (node);
-	if (has_input_redirections(node))
-		return (node);
-	if (count_output_redirections(node) <= 1)
-		return (node);
-	move_last_output_to_top(&node);
+	
+	// Pour les redirections output multiples, garder l'ordre naturel
+	// (la dernière parsée = la dernière dans la commande = celle qui gagne)
 	return (node);
 }
 
@@ -186,12 +184,82 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 	return (left);
 }
 
+static t_ast	*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **env)
+{
+	t_ast	*redirection_chain;
+	t_ast	*current_redir;
+	t_ast	*new_redir;
+
+	redirection_chain = NULL;
+	current_redir = NULL;
+	while (parser->current && (parser->current->type == T_REDIR_IN ||
+			parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND ||
+			parser->current->type == T_HEREDOC))
+	{
+		new_redir = parse_single_redirection(parser, env);
+		if (!new_redir)
+			return (redirection_chain ? free_ast(redirection_chain) : NULL, NULL);
+		if (!redirection_chain)
+		{
+			redirection_chain = new_redir;
+			current_redir = redirection_chain;
+		}
+		else
+		{
+			current_redir->left = new_redir;
+			current_redir = new_redir;
+		}
+	}
+	if (current_redir)
+		current_redir->left = cmd;
+	else
+		return (cmd);
+	return (redirection_chain);
+}
+
+static t_ast	*parse_command_with_redirections(t_parser *parser, t_list **env)
+{
+	t_ast	*cmd;
+	t_ast	*result;
+	t_ast	*prefix_redirs;
+
+	prefix_redirs = NULL;
+	if (parser->current && (parser->current->type == T_REDIR_IN ||
+			parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND ||
+			parser->current->type == T_HEREDOC))
+	{
+		prefix_redirs = collect_all_redirections(parser, NULL, env);
+		if (!prefix_redirs)
+			return (NULL);
+	}
+	if (!check(parser, T_WORD))
+		return (prefix_redirs ? free_ast(prefix_redirs) : NULL,
+			error(parser, "Expected command"), NULL);
+	cmd = parse_command(parser, env);
+	if (!cmd)
+		return (prefix_redirs ? free_ast(prefix_redirs) : NULL, NULL);
+	if (prefix_redirs)
+	{
+		t_ast *temp = prefix_redirs;
+		while (temp->left && temp->left->type != NODE_CMD)
+			temp = temp->left;
+		temp->left = cmd;
+		result = prefix_redirs;
+	}
+	else
+		result = cmd;
+	result = collect_all_redirections(parser, result, env);
+	return (result);
+}
+
 t_ast	*parse_primary(t_parser *parser, t_list **env)
 {
 	if (check(parser, T_LPAREN))
 		return (parse_subshell(parser, env));
-	if (check(parser, T_WORD))
-		return (parse_command(parser, env));
+	if (check(parser, T_WORD) || (parser->current && (parser->current->type == T_REDIR_IN ||
+			parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND ||
+			parser->current->type == T_HEREDOC)))
+		return (parse_command_with_redirections(parser, env));
 	error(parser, "Expected command or '('");
 	return (NULL);
 }

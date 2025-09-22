@@ -37,6 +37,8 @@
 # define CHILD_PID 0
 # define PATH_MAX 4096
 
+extern int g_signal_received;
+
 typedef enum e_node_type
 {
 	NODE_CMD,
