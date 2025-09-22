@@ -72,10 +72,10 @@ static int	exec_get_path(t_ast *node)
 		return (exec_abs_path(node));
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
-		return (perror("minishell: no defined PATH\n"), -1);
+		return (perror("minishell: no defined PATH"), -1); // TODO : set errno appropriately (separate into exec, exec_builtin maybe)
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
-		return (perror("minishell: split error in PATH\n"), -1);
+		return (perror("minishell: split error in PATH"), -1);
 	i = -1;
 	while (path_dirs[++i])
 	{

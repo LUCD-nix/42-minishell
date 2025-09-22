@@ -186,11 +186,11 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 
 static t_ast	*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **env)
 {
-	t_ast	*redirection_chain;
+	t_ast	*bottom_redir;
 	t_ast	*current_redir;
 	t_ast	*new_redir;
 
-	redirection_chain = NULL;
+	bottom_redir = NULL;
 	current_redir = NULL;
 	while (parser->current && (parser->current->type == T_REDIR_IN ||
 			parser->current->type == T_REDIR_OUT || parser->current->type == T_APPEND ||
@@ -198,23 +198,23 @@ static t_ast	*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **en
 	{
 		new_redir = parse_single_redirection(parser, env);
 		if (!new_redir)
-			return (redirection_chain ? free_ast(redirection_chain) : NULL, NULL);
-		if (!redirection_chain)
+			return (current_redir ? free_ast(current_redir) : NULL, NULL);
+		if (!bottom_redir)
 		{
-			redirection_chain = new_redir;
-			current_redir = redirection_chain;
+			bottom_redir = new_redir;
+			current_redir = bottom_redir;
 		}
 		else
 		{
-			current_redir->left = new_redir;
+			new_redir->left = current_redir;
 			current_redir = new_redir;
 		}
 	}
-	if (current_redir)
-		current_redir->left = cmd;
+	if (bottom_redir)
+		bottom_redir->left = cmd;
 	else
 		return (cmd);
-	return (redirection_chain);
+	return (current_redir);
 }
 
 static t_ast	*parse_command_with_redirections(t_parser *parser, t_list **env)
@@ -241,7 +241,7 @@ static t_ast	*parse_command_with_redirections(t_parser *parser, t_list **env)
 	if (prefix_redirs)
 	{
 		t_ast *temp = prefix_redirs;
-		while (temp->left && temp->left->type != NODE_CMD)
+		while (temp->left)
 			temp = temp->left;
 		temp->left = cmd;
 		result = prefix_redirs;
