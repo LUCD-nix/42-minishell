@@ -10,49 +10,6 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <stdlib.h>
-#include <unistd.h>
-
-static int	exec_builtin2(t_ast *node, int argc, char **argv, char **envp)
-{
-	int	res;
-
-	res = -1;
-	if (!ft_memcmp(node->command->path, "unset", 6))
-		res = builtin_unset(argc, node);
-	else if (!ft_memcmp(node->command->path, "env", 4))
-		res = (builtin_env(argc, argv, envp));
-	if (!ft_memcmp(node->command->path, "exit", 5))
-		return (builtin_exit(node, argc, argv, envp));
-	return (res);
-}
-
-int	exec_builtin(t_ast *node)
-{
-	int		argc;
-	int		res;
-	char	**argv;
-	char	**envp;
-
-	res = -1;
-	argc = 0;
-	argv = node->command->args;
-	envp = env_lst_to_str_array(*node->env);
-	while (argv[argc] != NULL)
-		argc++;
-	if (!ft_memcmp(node->command->path, "echo", 5))
-		res = builtin_echo(argc, argv);
-	else if (!ft_memcmp(node->command->path, "cd", 3))
-		res = builtin_cd(argc, node);
-	else if (!ft_memcmp(node->command->path, "pwd", 4))
-		res = builtin_pwd(argc);
-	else if (!ft_memcmp(node->command->path, "export", 7))
-		res = builtin_export(argc, node);
-	else
-		res = exec_builtin2(node, argc, argv, envp);
-	ft_free_tab(envp);
-	return (res);
-}
 
 static int	exec_abs_path(t_ast *node)
 {
@@ -91,6 +48,27 @@ static int	exec_get_path(t_ast *node)
 	return (ft_free_tab(path_dirs), perror("Error: program not in PATH"), -1);
 }
 
+void	init_process(t_ast *process, char **envp)
+{
+	if (exec_get_path(process) != 0)
+	{
+		ft_free_tab(envp);
+		exit_and_free(process, EXIT_FAILURE, "exec: can't find file");
+	}
+	if (process->fd_in != STDIN_FILENO
+		&& dup2(process->fd_in, STDIN_FILENO) == -1)
+	{
+		ft_free_tab(envp);
+		exit_and_free(process, EXIT_FAILURE, "exec: error duping fd_in");
+	}
+	if (process->fd_out != STDOUT_FILENO
+		&& dup2(process->fd_out, STDOUT_FILENO) == -1)
+	{
+		ft_free_tab(envp);
+		exit_and_free(process, EXIT_FAILURE, "exec: error duping fd_out");
+	}
+}
+
 int	exec_process(t_ast *process)
 {
 	pid_t	pid;
@@ -101,20 +79,12 @@ int	exec_process(t_ast *process)
 	pid = fork();
 	if (pid == -1)
 		exit_and_free(process, EXIT_FAILURE, "exec: error forking process");
-	envp = env_lst_to_str_array(*process->env);
 	if (pid == CHILD_PID)
 	{
-		if ((exec_get_path(process) != 0)
-			|| (process->fd_in != STDIN_FILENO
-				&& dup2(process->fd_in, STDIN_FILENO) == -1)
-			|| (process->fd_out != STDOUT_FILENO
-				&& dup2(process->fd_out, STDOUT_FILENO) == -1))
-			return (ft_free_tab(envp),
-				exit_and_free(process, EXIT_FAILURE, "exec: Error setting up"),
-				EXIT_FAILURE);
+		envp = env_lst_to_str_array(*process->env);
+		init_process(process, envp);
 		execve(process->command->path, process->command->args, envp);
 	}
 	waitpid(pid, &return_value, 0);
-	ft_free_tab(envp);
 	return (return_value);
 }

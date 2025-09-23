@@ -10,6 +10,21 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <unistd.h>
+
+void	close_fds(t_ast *node)
+{
+	if (node->fd_in != STDIN_FILENO)
+	{
+		close(node->fd_in);
+		close(STDIN_FILENO);
+	}
+	if (node->fd_out != STDOUT_FILENO)
+	{
+		close(node->fd_out);
+		close(STDOUT_FILENO);
+	}
+}
 
 void	exit_and_free(t_ast *node, int exit_code, char *message)
 {
@@ -18,6 +33,7 @@ void	exit_and_free(t_ast *node, int exit_code, char *message)
 		ft_printf("minishell: ");
 		perror(message);
 	}
+	close_fds(node);
 	ft_lstclear(node->env, &env_free);
 	free_ast(node->top);
 	exit(exit_code);
