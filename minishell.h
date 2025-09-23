@@ -34,6 +34,8 @@
 
 # define PIPE_OUT 0
 # define PIPE_IN 1
+# define PIPE_LEFT 0
+# define PIPE_RIGHT 1
 # define CHILD_PID 0
 # define PATH_MAX 4096
 
@@ -183,7 +185,6 @@ void			env_free(void *ptr);
 /*---Pipes---*/
 int				pipe_create(t_ast *writer, t_ast *reader);
 void			pipe_propagate_fd(t_ast *node);
-int				pipe_from_file(char *filename);
 
 /*---Traversal---*/
 int				traverse_node(t_ast *node);
@@ -225,5 +226,6 @@ char			*expand_variables(char *value, t_list *envp,
 void			ft_free_tab(char **tab);
 void			*ft_realloc(void *ptr, size_t size);
 void			exit_and_free(t_ast *node, int exit_code, char *message);
+void			close_fds(t_ast *node);
 
 #endif // MINISHELL_H

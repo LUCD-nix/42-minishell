@@ -10,6 +10,7 @@ CFILES = src/ast/ast.c                               \
 	src/envp/envp.c                                  \
 	src/envp/env_init_append.c                       \
 	src/exec/exec.c                                  \
+	src/exec/exec_builtin.c                          \
 	src/exit/exit.c                                  \
 	src/lexer/lexer.c                                \
 	src/main.c                                       \
