@@ -10,12 +10,9 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <stdlib.h>
 
 void	andor_propagate_fd(t_ast *node)
 {
-// TODO: (a | b && c | d) < file does not propagate file to "c"
-// in BASH, and it does here, needs more testing
 	node->left->fd_in = node->fd_in;
 	node->left->fd_out = node->fd_out;
 	node->right->fd_in = node->fd_in;
