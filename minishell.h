@@ -39,6 +39,8 @@
 
 extern int g_signal_received;
 
+typedef int	t_file_desc;
+
 typedef enum e_node_type
 {
 	NODE_CMD,
@@ -189,6 +191,7 @@ int				traverse_file(t_ast *node, int flags);
 int				traverse_pipe(t_ast *node);
 int				traverse_builtin(t_ast *node);
 int				traverse_andor(t_ast *node, t_node_type type);
+int				traverse_heredoc(t_ast *node);
 void			andor_propagate_fd(t_ast *node);
 
 /*---Execution---*/

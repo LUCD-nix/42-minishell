@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <stdlib.h>
 
 void	andor_propagate_fd(t_ast *node)
 {
@@ -21,39 +22,9 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
-int	traverse_heredoc(t_ast *node)
-{
-	int		tmp_file;
-	char	*line;
-	int		delim_len;
-	int		res;
-
-	delim_len = ft_strlen(node->filename);
-	tmp_file = open("tmp_file_for_heredoc", O_CREAT | O_TRUNC | O_RDWR);
-	node->left->fd_in = tmp_file;
-	if (tmp_file == -1)
-		exit_and_free(node, EXIT_FAILURE, "heredoc: tmp file error");
-	line = get_next_line(STDIN_FILENO);
-	while (ft_strncmp(line, node->filename, delim_len + 1) != '\n')
-	{
-		if (line == NULL)
-			exit_and_free(node, EXIT_FAILURE, "heredoc: stdin read error");
-		write(tmp_file, line, ft_strlen(line));
-		free(line);
-		line = get_next_line(STDIN_FILENO);
-	}
-	// TODO : change this to use another open() call
-	lseek(tmp_file, 0, SEEK_SET);
-	res = traverse_node(node->left);
-	free(line);
-	if (close(tmp_file) == -1 || unlink("tmp_file_for_heredoc") == -1)
-		exit_and_free(node, EXIT_FAILURE, "heredoc: error closing file");
-	return (res);
-}
-
 void	redir_propagate_fd(t_ast *node, int file_fd)
 {
-	if (node->type == NODE_REDIR_IN)
+	if (node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC)
 	{
 		node->left->fd_in = file_fd;
 		node->left->fd_out = node->fd_out;
@@ -73,17 +44,20 @@ void	redir_propagate_fd(t_ast *node, int file_fd)
 
 int	traverse_redir(t_ast *node)
 {
-	int	file_fd;
-	int	o_flags;
-	int	res;
+	t_file_desc	file_fd;
+	int			o_flags;
+	int			res;
 
 	if (node->type == NODE_REDIR_IN)
 		o_flags = O_RDONLY;
 	else if (node->type == NODE_REDIR_OUT)
 		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
-	else
+	else if (node->type == NODE_APPEND)
 		o_flags = O_WRONLY | O_CREAT | O_APPEND;
-	file_fd = traverse_file(node, o_flags);
+	if (node->type == NODE_HEREDOC)
+		file_fd = traverse_heredoc(node);
+	else
+		file_fd = traverse_file(node, o_flags);
 	redir_propagate_fd(node, file_fd);
 	res = traverse_node(node->left);
 	close(file_fd);
@@ -103,13 +77,11 @@ int	traverse_node(t_ast *node)
 		res = traverse_builtin(node);
 	else if (type == NODE_PIPE)
 		res = traverse_pipe(node);
-	else if (type == NODE_REDIR_IN
+	else if (type == NODE_REDIR_IN || type == NODE_HEREDOC
 		|| type == NODE_REDIR_OUT || type == NODE_APPEND)
 		res = traverse_redir(node);
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);
-	else if (type == NODE_HEREDOC)
-		res = traverse_heredoc(node);
 	return (res);
 }
 //

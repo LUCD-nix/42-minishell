@@ -17,6 +17,7 @@ CFILES = src/ast/ast.c                  \
 	src/token/token.c                   \
 	src/token/utils.c                   \
 	src/traversal/traversal.c           \
+	src/traversal/traverse_heredoc.c   \
 	src/traversal/traversal_funcs.c
 
 OBJS := $(CFILES:.c=.o)

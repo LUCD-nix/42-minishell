@@ -102,20 +102,12 @@ int	traverse_andor(t_ast *node, t_node_type type)
 	return (res);
 }
 
-int	traverse_file(t_ast *node, int flags)
+t_file_desc	traverse_file(t_ast *node, int flags)
 {
 	int	file_fd;
 
 	file_fd = open(node->filename, flags, 0644);
 	if (file_fd == -1)
 		exit_and_free(node, EXIT_FAILURE, "error opening file");
-	if (node->type == NODE_REDIR_IN
-		&& node->fd_in != STDIN_FILENO
-		&& dup2(node->fd_in, file_fd) == -1)
-		exit_and_free(node, EXIT_FAILURE, "error redirecting output");
-	if (node->type == NODE_REDIR_OUT
-		&& node->fd_out != STDOUT_FILENO
-		&& dup2(node->fd_out, file_fd) == -1)
-		exit_and_free(node, EXIT_FAILURE, "error redirecting output");
 	return (file_fd);
 }
