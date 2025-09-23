@@ -42,6 +42,26 @@ void	redir_propagate_fd(t_ast *node, int file_fd)
 	}
 }
 
+int	traverse_subshell(t_ast *node)
+{
+	int	status;
+	int	res;
+
+	status = fork();
+	res = -1;
+	if (status == -1)
+		exit_and_free(node, EXIT_FAILURE, "error forking subshell");
+	if (status == CHILD_PID)
+	{
+		node->left->fd_in = node->fd_in;
+		node->left->fd_out = node->fd_out;
+		return (exit_and_free(node, traverse_node(node->left), NULL), 0);
+	}
+	else
+		waitpid(status, &res, 0);
+	return (res);
+}
+
 int	traverse_redir(t_ast *node)
 {
 	t_file_desc	file_fd;
@@ -82,6 +102,8 @@ int	traverse_node(t_ast *node)
 		res = traverse_redir(node);
 	else if (type == NODE_AND || type == NODE_OR)
 		res = traverse_andor(node, type);
+	else if (type == NODE_SUBSHELL)
+		res = traverse_subshell(node);
 	return (res);
 }
 //
