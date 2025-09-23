@@ -1,7 +1,7 @@
 NAME = minishell
 
-CFILES = src/ast/ast_free.c				             \
-	src/ast/ast_init.c					             \
+CFILES = src/ast/ast_free.c                          \
+	src/ast/ast_init.c                               \
 	src/ast/parser_commands.c                        \
 	src/ast/parser_main.c                            \
 	src/ast/parser_operations.c                      \
@@ -24,6 +24,7 @@ CFILES = src/ast/ast_free.c				             \
 	src/traversal/traverse_file_builtin_pipe_andor.c \
 	src/traversal/traverse_heredoc.c                 \
 	src/traversal/traverse_node_redir_subshell.c
+
 OBJS := $(CFILES:.c=.o)
 
 CC = cc
