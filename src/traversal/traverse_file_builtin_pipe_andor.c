@@ -10,7 +10,6 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <stdlib.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 {
@@ -93,7 +92,6 @@ int	traverse_andor(t_ast *node, t_node_type type)
 		if (res == EXIT_SUCCESS)
 			res = traverse_node(node->right);
 	}
-	// TODO : untested (NODE_OR)
 	else
 	{
 		if (res == EXIT_FAILURE)
