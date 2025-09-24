@@ -29,19 +29,3 @@ void	pipe_propagate_fd(t_ast *node)
 	node->left->fd_in = node->fd_in;
 	node->right->fd_out = node->fd_out;
 }
-// int	pipe_from_file(char *file)
-// {
-// 	int		file_fd;
-// 	int		pipe_fd[2];
-//
-// 	file_fd = open(file, O_RDONLY);
-// 	if (file_fd == -1)
-// 		return (-1);
-// 	if (pipe(pipe_fd) == -1)
-// 		return (-1);
-// 	if (dup2(file_fd, pipe_fd[PIPE_OUT]) == -1)
-// 		return (-1);
-// 	if (close(pipe_fd[PIPE_IN]) == -1)
-// 		return (-1);
-// 	return (pipe_fd[PIPE_OUT]);
-// }

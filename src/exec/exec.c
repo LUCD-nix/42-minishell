@@ -56,13 +56,15 @@ void	init_process(t_ast *process, char **envp)
 		exit_and_free(process, EXIT_FAILURE, "exec: can't find file");
 	}
 	if (process->fd_in != STDIN_FILENO
-		&& dup2(process->fd_in, STDIN_FILENO) == -1)
+		&& (dup2(process->fd_in, STDIN_FILENO) == -1
+			|| close(process->fd_in) == -1))
 	{
 		ft_free_tab(envp);
 		exit_and_free(process, EXIT_FAILURE, "exec: error duping fd_in");
 	}
 	if (process->fd_out != STDOUT_FILENO
-		&& dup2(process->fd_out, STDOUT_FILENO) == -1)
+		&& (dup2(process->fd_out, STDOUT_FILENO) == -1
+			|| close(process->fd_out) == -1))
 	{
 		ft_free_tab(envp);
 		exit_and_free(process, EXIT_FAILURE, "exec: error duping fd_out");

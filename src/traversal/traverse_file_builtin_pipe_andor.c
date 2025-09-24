@@ -54,30 +54,30 @@ int	traverse_builtin(t_ast *node)
 int	traverse_pipe(t_ast *node)
 {
 	int		res;
-	pid_t	pid_left;
-	pid_t	pid_right;
+	pid_t	pids[2];
 
 	res = -1;
 	pipe_propagate_fd(node);
 	if (pipe_create(node->left, node->right) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error creating pipe");
-	pid_left = fork();
-	if (pid_left == -1)
+	pids[PIPE_LEFT] = fork();
+	if (pids[PIPE_LEFT] == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pid_left == CHILD_PID)
+	if (pids[PIPE_LEFT] == CHILD_PID && close(node->right->fd_in) == -1)
+		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
+	if (pids[PIPE_LEFT] == CHILD_PID)
 		exit_and_free(node->left, traverse_node(node->left), NULL);
-	if (close(node->left->fd_out) == -1)
-		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
-	pid_right = fork();
-	if (pid_right == -1)
+	pids[PIPE_RIGHT] = fork();
+	if (pids[PIPE_RIGHT] == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pid_right == CHILD_PID)
-		exit_and_free(node->right, traverse_node(node->right), NULL);
-	if (close(node->right->fd_in) == -1)
+	if (pids[PIPE_RIGHT] == CHILD_PID && close(node->left->fd_out) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
-	waitpid(pid_left, NULL, 0);
-	waitpid(pid_right, &res, 0);
-	return (res);
+	if (pids[PIPE_RIGHT] == CHILD_PID)
+		exit_and_free(node->right, traverse_node(node->right), NULL);
+	waitpid(pids[PIPE_LEFT], NULL, 0);
+	close(node->left->fd_out);
+	waitpid(pids[PIPE_RIGHT], &res, 0);
+	return (close(node->right->fd_in), res);
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)
@@ -94,7 +94,7 @@ int	traverse_andor(t_ast *node, t_node_type type)
 	}
 	else
 	{
-		if (res == EXIT_FAILURE)
+		if (res != EXIT_FAILURE)
 			res = traverse_node(node->right);
 	}
 	return (res);
