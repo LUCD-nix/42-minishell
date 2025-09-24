@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   pratt_parser.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/24 14:38:10 by alvanaut          #+#    #+#             */
+/*   Updated: 2025/09/24 14:43:32 by alvanaut         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../../minishell.h"
 
 t_precedence	get_precedence(t_token_type type)
@@ -8,8 +20,8 @@ t_precedence	get_precedence(t_token_type type)
 		return (PREC_AND);
 	if (type == T_PIPE)
 		return (PREC_PIPE);
-	if (type == T_REDIR_IN || type == T_REDIR_OUT
-			|| type == T_APPEND || type == T_HEREDOC)
+	if (type == T_REDIR_IN || type == T_REDIR_OUT || type == T_APPEND
+		|| type == T_HEREDOC)
 		return (PREC_REDIR);
 	return (PREC_NONE);
 }
@@ -40,12 +52,4 @@ int	check(t_parser *parser, t_token_type type)
 int	at_end(t_parser *parser)
 {
 	return (parser->current == NULL);
-}
-
-void	error(t_parser *parser, char *message)
-{
-	parser->had_error = 1;
-	printf("Parse error: %s\n", message);
-	if (parser->current)
-		printf("Near token: '%s'\n", parser->current->value);
 }

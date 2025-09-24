@@ -154,12 +154,15 @@ void			free_token(t_token *token);
 t_token			*lexer_to_token(t_lexeme *lex);
 t_token_type	get_token_type(char *token);
 
-/* AST */
+/* init_AST */
 t_ast			*init_ast_node(t_node_type type, t_list **env);
 t_ast			*init_cmd_node(t_command *cmd, t_list **env);
-void			free_ast(t_ast *ast);
-void			free_cmd(t_command *cmd);
 t_command		*init_cmd(char **args);
+
+/* Free_AST */
+void			free_redir(t_redir *redir);
+void			free_cmd(t_command *cmd);
+void			free_ast(t_ast *ast);
 
 /*---Built-ins---*/
 int				builtin_echo(int argc, char **argv);
@@ -198,13 +201,30 @@ void			andor_propagate_fd(t_ast *node);
 int				exec_process(t_ast *command);
 int				exec_builtin(t_ast *builtin);
 
-/* Pratt Parser */
-t_ast			*parse(t_token *tokens, t_list **env);
+/* parse commands */
+t_ast			*parse_command(t_parser *parser, t_list **env);
+
+/* Parse main */
+char			**collect_args(t_parser *parser, int *count);
 t_ast			*parse_expression(t_parser *parser, t_precedence precedence,
 					t_list **env);
+void			propagate_first_node(t_ast *first, t_ast *current);
+t_ast			*parse(t_token *tokens, t_list **env);
+
+/* Parse operations */
+t_ast			*parse_binary(t_parser *parser, t_ast *left, t_token_type op,
+						t_list **env);
 t_ast			*parse_primary(t_parser *parser, t_list **env);
-t_ast			*parse_command(t_parser *parser, t_list **env);
-t_ast			*parse_subshell(t_parser *parser, t_list **env);
+
+/* Parse redirections */
+t_ast 			*parse_single_redirection(t_parser *parser, t_list **env);
+t_ast			*reorganize_redirections(t_ast *node);
+t_ast			*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **env);
+t_ast	*parse_command_with_redirections(t_parser *parser, t_list **env);
+
+
+/* Pratt Parser */
+t_ast			*parse(t_token *tokens, t_list **env);
 t_precedence	get_precedence(t_token_type type);
 int				is_builtin(char *value);
 

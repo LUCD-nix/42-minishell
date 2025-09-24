@@ -1,9 +1,14 @@
 NAME = minishell
 
-CFILES = src/ast/ast.c                  \
-	src/ast/parser.c                    \
+CFILES = src/ast/ast_free.c				\
+	src/ast/ast_init.c					\
 	src/ast/pratt_parser.c              \
+	src/ast/parser_commands.c           \
 	src/builtins/builtin_cd_pwd.c       \
+	src/ast/parser_main.c               \
+	src/ast/parser_operations.c         \
+	src/ast/parser_redirections.c       \
+	src/ast/pratt_parser_utils.c        \
 	src/builtins/builtin_echo_env_exit.c\
 	src/builtins/builtin_export_unset.c \
 	src/envp/env.c                      \
