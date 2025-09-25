@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   traversal_funcs.c                                  :+:      :+:    :+:   */
+/*   traverse_file_builtin_pipe_andor.c                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -54,30 +54,27 @@ int	traverse_builtin(t_ast *node)
 int	traverse_pipe(t_ast *node)
 {
 	int		res;
+	int		pipe_fd[2];
 	pid_t	pids[2];
 
 	res = -1;
 	pipe_propagate_fd(node);
-	if (pipe_create(node->left, node->right) == -1)
+	if (pipe(pipe_fd) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error creating pipe");
 	pids[PIPE_LEFT] = fork();
 	if (pids[PIPE_LEFT] == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pids[PIPE_LEFT] == CHILD_PID && close(node->right->fd_in) == -1)
-		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
 	if (pids[PIPE_LEFT] == CHILD_PID)
-		exit_and_free(node->left, traverse_node(node->left), NULL);
+		pipe_left_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
 	pids[PIPE_RIGHT] = fork();
 	if (pids[PIPE_RIGHT] == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pids[PIPE_RIGHT] == CHILD_PID && close(node->left->fd_out) == -1)
-		exit_and_free(node, EXIT_FAILURE, "error closing pipe");
 	if (pids[PIPE_RIGHT] == CHILD_PID)
-		exit_and_free(node->right, traverse_node(node->right), NULL);
+		pipe_right_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
 	waitpid(pids[PIPE_LEFT], NULL, 0);
-	close(node->left->fd_out);
+	close(pipe_fd[PIPE_IN]);
 	waitpid(pids[PIPE_RIGHT], &res, 0);
-	return (close(node->right->fd_in), res);
+	return (close(pipe_fd[PIPE_OUT]), res);
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)

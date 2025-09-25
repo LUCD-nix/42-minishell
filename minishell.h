@@ -186,8 +186,9 @@ void			env_delete_key(t_list **head, char *key);
 void			env_free(void *ptr);
 
 /*---Pipes---*/
-int				pipe_create(t_ast *writer, t_ast *reader);
 void			pipe_propagate_fd(t_ast *node);
+void			pipe_right_routine(t_ast *node_pipe, int pipe_in, int pipe_out);
+void			pipe_left_routine(t_ast *node_pipe, int pipe_in, int pipe_out);
 
 /*---Traversal---*/
 int				traverse_node(t_ast *node);
