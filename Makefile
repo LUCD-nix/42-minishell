@@ -12,8 +12,8 @@ CFILES = src/ast/ast_free.c                          \
 	src/builtins/builtin_echo_env_exit.c             \
 	src/builtins/builtin_export_unset.c              \
 	src/envp/env.c                                   \
-	src/envp/env_init_append.c                       \
 	src/envp/envp.c                                  \
+	src/envp/env_init_append.c                       \
 	src/exec/exec.c                                  \
 	src/exec/exec_builtin.c                          \
 	src/exit/exit.c                                  \
