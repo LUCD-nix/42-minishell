@@ -13,7 +13,7 @@ char	*read_line(void)
 	return (line);
 }
 
-static t_lexeme	handle_separator(char *line, int *i)
+t_lexeme	handle_separator(char *line, int *i)
 {
 	t_lexeme	lex;
 
@@ -47,7 +47,7 @@ static t_lexeme	handle_separator(char *line, int *i)
 
 
 
-static t_lexeme	handle_quote(char *line, int *i)
+t_lexeme	handle_quote(char *line, int *i)
 {
 	t_lexeme	lex;
 	char		quote;
@@ -78,7 +78,7 @@ static t_lexeme	handle_quote(char *line, int *i)
 }
 
 
-static int	is_separator(char *line)
+int	is_separator(char *line)
 {
 	if (!line)
 		return (0);
@@ -95,7 +95,7 @@ static int	is_separator(char *line)
 	return (0);
 }
 
-static t_lexeme	handle_word(char *line, int *i)
+t_lexeme	handle_word(char *line, int *i)
 {
 	int			index;
 	t_lexeme	lex;
@@ -111,13 +111,13 @@ static t_lexeme	handle_word(char *line, int *i)
 	return (*i += index, lex.value = ft_substr(line, 0, index), lex);
 }
 
-static void	skip_spaces(char *line, int *i)
+void	skip_spaces(char *line, int *i)
 {
 	while (line[*i] == '\t' || line[*i] == ' ')
 		(*i)++;
 }
 
-static t_lexeme	*add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
+t_lexeme	*add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
 {
 	t_lexeme	*new_lexeme;
 	int			i;

@@ -27,6 +27,7 @@ t_ast	*init_ast_node(t_node_type type, t_list **env)
 	ast->env = env;
 	ast->left = NULL;
 	ast->right = NULL;
+	ast->heredoc_quoted = 0;
 	return (ast);
 }
 

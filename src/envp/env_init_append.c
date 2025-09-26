@@ -49,10 +49,18 @@ t_list	*env_lst_add(t_list **lst, char *str)
 t_list	*env_lst_from_str_arr(char **to_copy)
 {
 	t_list	*res;
+	char *temp;
 	int		i;
 
 	i = 0;
 	res = NULL;
+	if (to_copy == NULL)
+	{
+		temp = "PWD=";
+		temp = ft_strjoin_free_second(temp, getcwd(NULL, 0));
+		env_lst_add(&res, temp);
+		free(temp);
+	}
 	while (to_copy[i] != NULL)
 	{
 		if (env_lst_add(&res, to_copy[i]) == NULL)

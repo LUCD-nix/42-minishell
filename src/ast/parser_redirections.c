@@ -29,7 +29,11 @@ t_ast *parse_single_redirection(t_parser *parser, t_list **env)
     else if (redir_type == T_APPEND)
         redir_node = init_ast_node(NODE_APPEND, env);
     else if (redir_type == T_HEREDOC)
+    {
         redir_node = init_ast_node(NODE_HEREDOC, env);
+        if (redir_node)
+            redir_node->heredoc_quoted = (parser->current->quote != Q_NONE);
+    }
     else
         return (error(parser, "Unknown redirection type"), NULL);
 
