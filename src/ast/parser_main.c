@@ -12,52 +12,6 @@
 
 #include "../../minishell.h"
 
-// char	**collect_args(t_parser *parser, int *count)
-// {
-// 	char	**args;
-// 	int		capacity;
-// 	char	**new_args;
-// 	int		i;
-//
-// 	*count = 0;
-// 	capacity = 4;
-// 	args = malloc(sizeof(char *) * capacity);
-// 	if (!args)
-// 		return (NULL);
-// 	while (check(parser, T_WORD))
-// 	{
-// 		if (*count >= capacity - 1)
-// 		{
-// 			capacity *= 2;
-// 			new_args = malloc(sizeof(char *) * capacity);
-// 			if (!new_args)
-// 				return (ft_free_tab(args), NULL);
-// 			i = 0;
-// 			while (i < *count)
-// 			{
-// 				new_args[i] = args[i];
-// 				i++;
-// 			}
-// 			free(args);
-// 			args = new_args;
-// 		}
-// 		args[*count] = ft_strdup(parser->current->value);
-// 		if (!args[*count])
-// 		{
-// 			while (--(*count) >= 0)
-// 				free(args[*count]);
-// 			return (free(args), NULL);
-// 		}
-// 		(*count)++;
-// 		advance(parser);
-// 		if (parser->current
-// 			&& get_precedence(parser->current->type) > PREC_NONE)
-// 			break ;
-// 	}
-// 	args[*count] = NULL;
-// 	return (args);
-// }
-
 t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 		t_list **env)
 {
