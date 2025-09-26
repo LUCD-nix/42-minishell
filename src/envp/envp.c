@@ -100,15 +100,3 @@ char	*expand_variables(char *value, t_list *envp, int last_status, t_quote_type 
 	return (res);
 }
 
-void	print_tokens(t_token *tokens)
-{
-	t_token	*tmp;
-
-	tmp = tokens;
-	while (tmp)
-	{
-		printf("value: [%s], type: %d, quote: %d\n", tmp->value, tmp->type, tmp->quote);
-		tmp = tmp->next;
-	}
-}
-
