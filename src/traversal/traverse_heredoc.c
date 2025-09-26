@@ -12,7 +12,7 @@
 
 #include "../../minishell.h"
 
-static t_file_desc	open_tmp_file(t_file_desc fd)
+t_file_desc	open_tmp_file(t_file_desc fd)
 {
 	char		buf[15];
 	char		*tmp;
@@ -31,7 +31,7 @@ static t_file_desc	open_tmp_file(t_file_desc fd)
 	return (res);
 }
 
-static int	is_delimiter_line(char *line, char *delimiter)
+int	is_delimiter_line(char *line, char *delimiter)
 {
 	int		delim_len;
 	int		line_len;
@@ -61,7 +61,7 @@ static int	is_delimiter_line(char *line, char *delimiter)
 	return (result);
 }
 
-static int	should_expand_variables(t_ast *node)
+int	should_expand_variables(t_ast *node)
 {
 	if (!node)
 		return (1);
@@ -70,14 +70,14 @@ static int	should_expand_variables(t_ast *node)
 	return (1);
 }
 
-static char	*get_clean_delimiter(char *filename)
+char	*get_clean_delimiter(char *filename)
 {
 	if (!filename)
 		return (NULL);
 	return (ft_strdup(filename));
 }
 
-static int	contains_variables(char *line)
+int	contains_variables(char *line)
 {
 	int	i;
 
@@ -94,7 +94,7 @@ static int	contains_variables(char *line)
 	return (0);
 }
 
-static int	get_var_name_len(char *line, int start)
+int	get_var_name_len(char *line, int start)
 {
 	int	i;
 
@@ -105,7 +105,7 @@ static int	get_var_name_len(char *line, int start)
 	return (i);
 }
 
-static char	*extract_var_name(char *line, int start, int len)
+char	*extract_var_name(char *line, int start, int len)
 {
 	char	*var_name;
 	int		i;
@@ -123,7 +123,7 @@ static char	*extract_var_name(char *line, int start, int len)
 	return (var_name);
 }
 
-static char	*get_env_var_value(char *var_name, t_list **env)
+char	*get_env_var_value(char *var_name, t_list **env)
 {
 	t_list	*current;
 	t_env	*env_entry;
@@ -144,7 +144,7 @@ static char	*get_env_var_value(char *var_name, t_list **env)
 	return (NULL);
 }
 
-static void	copy_var_value(char *result, int *j, char *var_value)
+void	copy_var_value(char *result, int *j, char *var_value)
 {
 	int	k;
 
@@ -159,7 +159,7 @@ static void	copy_var_value(char *result, int *j, char *var_value)
 	}
 }
 
-static char	*expand_line_variables(char *line, t_list **env)
+char	*expand_line_variables(char *line, t_list **env)
 {
 	char	*result;
 	char	*var_name;
@@ -199,7 +199,7 @@ static char	*expand_line_variables(char *line, t_list **env)
 	return (result);
 }
 
-static char	*process_heredoc_line(char *line, t_ast *node)
+char	*process_heredoc_line(char *line, t_ast *node)
 {
 	char	*expanded_line;
 
@@ -214,7 +214,7 @@ static char	*process_heredoc_line(char *line, t_ast *node)
 	return (line);
 }
 
-static void	write_processed_line(int fd, char *line, t_ast *node)
+void	write_processed_line(int fd, char *line, t_ast *node)
 {
 	char	*processed_line;
 
@@ -229,7 +229,7 @@ static void	write_processed_line(int fd, char *line, t_ast *node)
 	}
 }
 
-static int	read_and_process_input(int tmp_file_write, t_ast *node)
+int	read_and_process_input(int tmp_file_write, t_ast *node)
 {
 	char	*line;
 	char	*original_line;
