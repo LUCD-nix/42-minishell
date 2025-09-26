@@ -27,12 +27,12 @@ void	close_fds(t_ast *node)
 	if (!isatty(STDIN_FILENO))
 	{
 		if (close(STDIN_FILENO) == -1)
-			perror("error closing fdin");
+			perror("error closing stdin");
 	}
 	if (!isatty(STDOUT_FILENO))
 	{
 		if (close(STDOUT_FILENO) == -1)
-			perror("error closing fdout");
+			perror("error closing stdout");
 	}
 }
 

@@ -26,7 +26,7 @@ void	redir_propagate_fd(t_ast *node, int file_fd)
 		node->left->fd_in = file_fd;
 		node->left->fd_out = node->fd_out;
 		if (node->fd_in != STDIN_FILENO
-			&& dup2(node->fd_in, file_fd) == -1)
+			&& (dup2(node->fd_in, file_fd) == -1 || close(node->fd_in) == -1))
 			exit_and_free(node, EXIT_FAILURE, "error redirecting input");
 	}
 	else
@@ -34,7 +34,7 @@ void	redir_propagate_fd(t_ast *node, int file_fd)
 		node->left->fd_out = file_fd;
 		node->left->fd_in = node->fd_in;
 		if (node->fd_out != STDOUT_FILENO
-			&& dup2(node->fd_out, file_fd) == -1)
+			&& (dup2(node->fd_out, file_fd) == -1 || close(node->fd_out) == -1))
 			exit_and_free(node, EXIT_FAILURE, "error redirecting output");
 	}
 }
@@ -52,7 +52,7 @@ int	traverse_subshell(t_ast *node)
 	{
 		node->left->fd_in = node->fd_in;
 		node->left->fd_out = node->fd_out;
-		return (exit_and_free(node, traverse_node(node->left), NULL), 0);
+		return (exit_and_free(node->left, traverse_node(node->left), NULL), 0);
 	}
 	else
 		waitpid(status, &res, 0);
