@@ -267,7 +267,7 @@ t_ast				*parse_primary(t_parser *parser, t_list **env);
 t_ast				*parse_single_redirection(t_parser *parser, t_list **env);
 t_ast				*reorganize_redirections(t_ast *node);
 t_ast				*collect_all_redirections(t_parser *parser, t_ast *cmd,
-						t_list **env);
+						t_list **env, t_ast *top_redir);
 t_ast				*parse_command_with_redirections(t_parser *parser,
 						t_list **env);
 t_ast				*handle_binary_operator(t_parser *parser, t_ast *left,
