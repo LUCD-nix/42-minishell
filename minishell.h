@@ -336,4 +336,14 @@ int					process_input_line(int tmp_file_write, char *line,
 int					read_and_process_input(int tmp_file_write, t_ast *node);
 int					traverse_heredoc(t_ast *node);
 
+/* Main */
+void				handle_interactive_signals(void);
+void				expand_tokens(t_token *tokens, t_list *envp, int last_status);
+void				init_minimal_env(t_list **my_envp);
+int					init_environment(char **envp, t_list **my_envp);
+int					handle_empty_line(char *line);
+int					handle_exit_command(char *line);
+int					process_parsed_line(t_token *tokens, t_list **envp, int *last_status);
+int					process_line(char *line, t_list **envp, int *last_status);
+
 #endif
