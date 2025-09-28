@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 14:33:25 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 14:33:58 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 14:57:07 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,11 +32,11 @@ void	expand_variable(t_heredoc_expand *data)
 		data->result[(*data->j)++] = data->line[(*data->i)++];
 }
 
-void	process_character(t_heredoc_expand *data)
+void	process_character_bis(t_heredoc_expand *data)
 {
 	if (data->line[*data->i] == '$' && data->line[*data->i + 1]
-		&& (ft_isalnum(data->line[*data->i + 1]) || data->line[*data->i
-			+ 1] == '_'))
+		&& (ft_isalnum(data->line[*data->i + 1])
+			|| data->line[*data->i + 1] == '_'))
 		expand_variable(data);
 	else
 		data->result[(*data->j)++] = data->line[(*data->i)++];
@@ -58,7 +58,7 @@ char	*expand_line_variables(char *line, t_list **env)
 	j = 0;
 	data = (t_heredoc_expand){line, result, &i, &j, env};
 	while (line[i])
-		process_character(&data);
+		process_character_bis(&data);
 	result[j] = '\0';
 	return (result);
 }

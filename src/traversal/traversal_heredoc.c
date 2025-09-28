@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:41:41 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/09/28 14:34:23 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 14:55:24 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ void	write_processed_line(int fd, char *line, t_ast *node)
 	}
 }
 
-static int	process_input_line(int tmp_file_write, char *line, t_ast *node)
+int	process_input_line(int tmp_file_write, char *line, t_ast *node)
 {
 	char	*original_line;
 

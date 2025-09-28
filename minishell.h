@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/18 17:06:39 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/09/28 14:18:21 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 14:56:52 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -315,4 +315,25 @@ void				setup_heredoc_signals(void);
 int					ignore_signals(void);
 int					check_signal_status(void);
 
-#endif // MINISHELL_H
+/* Traversal Heredoc */
+t_file_desc			open_tmp_file(t_file_desc fd);
+char				*clean_line_copy(char *line);
+int					is_delimiter_line(char *line, char *delimiter);
+int					should_expand_variables(t_ast *node);
+char				*get_clean_delimiter(char *filename);
+int					contains_variables(char *line);
+int					get_var_name_len(char *line, int start);
+char				*extract_var_name(char *line, int start, int len);
+char				*get_env_var_value(char *var_name, t_list **env);
+void				copy_var_value(char *result, int *j, char *var_value);
+char				*process_heredoc_line(char *line, t_ast *node);
+void				process_character_bis(t_heredoc_expand *data);
+char				*expand_line_variables(char *line, t_list **env);
+void				expand_variable(t_heredoc_expand *data);
+void				write_processed_line(int fd, char *line, t_ast *node);
+int					process_input_line(int tmp_file_write, char *line,
+						t_ast *node);
+int					read_and_process_input(int tmp_file_write, t_ast *node);
+int					traverse_heredoc(t_ast *node);
+
+#endif

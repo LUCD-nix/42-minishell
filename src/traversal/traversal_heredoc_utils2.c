@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 14:22:42 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 14:32:58 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 14:50:34 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,8 @@ int	contains_variables(char *line)
 	i = 0;
 	while (line[i])
 	{
-		if (line[i] == '$' && line[i + 1] && (ft_isalnum(line[i + 1]) || line[i
-				+ 1] == '_'))
+		if (line[i] == '$' && line[i + 1] && (ft_isalnum(line[i + 1])
+				|| line[i + 1] == '_'))
 			return (1);
 		i++;
 	}
@@ -34,8 +34,8 @@ int	get_var_name_len(char *line, int start)
 	int	i;
 
 	i = 0;
-	while (line[start + i] && (ft_isalnum(line[start + i]) || line[start
-			+ i] == '_'))
+	while (line[start + i] && (ft_isalnum(line[start + i])
+			|| line[start + i] == '_'))
 		i++;
 	return (i);
 }
