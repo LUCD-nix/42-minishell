@@ -19,7 +19,7 @@ static int	exec_abs_path(t_ast *node)
 	return (1);
 }
 
-static int	path_not_found(t_ast *node)
+static int	path_not_found(void)
 {
 	extern int	errno;
 
@@ -38,7 +38,7 @@ static int	exec_get_path(t_ast *node)
 		return (exec_abs_path(node));
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
-		return (path_not_found(node));
+		return (path_not_found());
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
 		return (perror("minishell: split error in PATH"), -1);
