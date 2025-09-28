@@ -19,7 +19,6 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
-
 int	traverse_subshell(t_ast *node)
 {
 	int	status;
@@ -60,7 +59,7 @@ void	redir_propagate_fd(t_ast *node, int file_fd)
 			node->left->fd_out = file_fd;
 			node->left->fd_in = node->fd_in;
 		}
-		if (node->fd_out != STDOUT_FILENO &&  close(node->fd_out) == -1)
+		if (node->fd_out != STDOUT_FILENO && close(node->fd_out) == -1)
 			exit_and_free(node, EXIT_FAILURE, "error redirecting output");
 		node->fd_out = file_fd;
 	}

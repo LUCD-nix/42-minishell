@@ -19,6 +19,15 @@ static int	exec_abs_path(t_ast *node)
 	return (1);
 }
 
+static int	path_not_found(t_ast *node)
+{
+	extern int	errno;
+
+	errno = ENOENT;
+	perror("minishell: no defined path");
+	return (-1);
+}
+
 static int	exec_get_path(t_ast *node)
 {
 	char	**path_dirs;
@@ -29,7 +38,7 @@ static int	exec_get_path(t_ast *node)
 		return (exec_abs_path(node));
 	path = env_get(*node->env, "PATH");
 	if (path == NULL)
-		return (perror("minishell: no defined PATH"), -1); // TODO : set errno appropriately (separate into exec, exec_builtin maybe)
+		return (path_not_found(node));
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
 		return (perror("minishell: split error in PATH"), -1);

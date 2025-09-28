@@ -49,7 +49,7 @@ t_list	*env_lst_add(t_list **lst, char *str)
 t_list	*env_lst_from_str_arr(char **to_copy)
 {
 	t_list	*res;
-	char *temp;
+	char	*temp;
 	int		i;
 
 	i = 0;
