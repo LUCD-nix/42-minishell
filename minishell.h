@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/18 17:06:39 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/09/28 13:57:05 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 14:18:21 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,6 +150,15 @@ typedef struct s_expansion_data
 	t_list			*envp;
 	int				last_status;
 }					t_expansion_data;
+
+typedef struct s_heredoc_expand
+{
+	char			*line;
+	char			*result;
+	int				*i;
+	int				*j;
+	t_list			**env;
+}					t_heredoc_expand;
 
 /* Lexer */
 char				*read_line(void);
