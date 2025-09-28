@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/18 17:06:39 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/09/28 12:49:30 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:57:05 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,16 +145,26 @@ typedef struct s_parser
 	int				had_error;
 }					t_parser;
 
+typedef struct s_expansion_data
+{
+	t_list			*envp;
+	int				last_status;
+}					t_expansion_data;
+
 /* Lexer */
 char				*read_line(void);
-int					is_separator(char *line);
+t_lexeme			create_separator_lexeme(char *line, int start, int len,
+						int *i);
+t_lexeme			handle_double_separators(char *line, int *i);
+t_lexeme			handle_single_separators(char *line, int *i);
 void				skip_spaces(char *line, int *i);
 void				free_lexemes(t_lexeme *lex);
-t_lexeme			handle_separator(char *line, int *i);
 t_lexeme			handle_quote(char *line, int *i);
 t_lexeme			handle_word(char *line, int *i);
 t_lexeme			*lexer(char *line);
 t_lexeme			*add_lexeme(t_lexeme *lexem, t_lexeme lex, int count);
+t_lexeme			handle_separator(char *line, int *i);
+int					is_separator(char *line);
 
 /* Tokens */
 t_token				*init_token(const char *line, t_token_type type,
@@ -167,6 +177,7 @@ t_token_type		get_token_type(char *token);
 t_ast				*init_ast_node(t_node_type type, t_list **env);
 t_ast				*init_cmd_node(t_command *cmd, t_list **env);
 t_command			*init_cmd(char **args);
+t_command			*allocate_command(void);
 
 /* Free_AST */
 void				free_redir(t_redir *redir);
@@ -182,7 +193,11 @@ int					builtin_unset(int argc, t_ast *node);
 int					builtin_env(int argc, char **argv, char **envp);
 int					builtin_exit(t_ast *node, int argc, char **argv,
 						char **envp);
-
+/* Envp*/
+char				*expand_status(char *res, int *i, int last_status);
+char				*expand_env_var(char *res, char *value, int *i,
+						t_list *env);
+char				*append_char(char *res, char c);
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);
 t_list				*env_lst_from_str_arr(char **to_copy);
@@ -216,15 +231,23 @@ int					exec_builtin(t_ast *builtin);
 t_ast				*parse_command(t_parser *parser, t_list **env);
 char				**resize_args_array(char **args, int *capacity);
 char				**init_args_array(int *capacity);
-int					handle_capacity_resize(char ***args, int *capacity, int count);
+int					handle_capacity_resize(char ***args, int *capacity,
+						int count);
 int					add_current_arg(char ***args, int count, t_parser *parser);
-int					should_countinue_collection(t_parser *parser);
+int					collect_single_arg(t_parser *parser, char ***args,
+						int *capacity, int count);
+int					should_continue_collection(t_parser *parser);
+
 /* Parse main */
 char				**collect_args(t_parser *parser, int *count);
 t_ast				*parse_expression(t_parser *parser, t_precedence precedence,
 						t_list **env);
 void				propagate_first_node(t_ast *first, t_ast *current);
 t_ast				*parse(t_token *tokens, t_list **env);
+int					is_redirection_operator(t_token_type op_type);
+int					is_binary_operator(t_token_type op_type);
+t_ast				*handle_redirection_operator(t_parser *parser, t_ast *left,
+						t_list **env);
 
 /* Parse operations */
 t_ast				*parse_binary(t_parser *parser, t_ast *left,
@@ -238,6 +261,17 @@ t_ast				*collect_all_redirections(t_parser *parser, t_ast *cmd,
 						t_list **env);
 t_ast				*parse_command_with_redirections(t_parser *parser,
 						t_list **env);
+t_ast				*handle_binary_operator(t_parser *parser, t_ast *left,
+						t_token_type op_type, t_list **env);
+t_ast				*process_operator(t_parser *parser, t_ast *left,
+						t_token_type op_type, t_list **env);
+t_ast				*create_redirection_node(t_token_type redir_type,
+						t_list **env);
+int					set_heredoc_quote_status(t_ast *redir_node,
+						t_parser *parser);
+t_ast				*parse_single_redirection(t_parser *parser, t_list **env);
+t_ast				*reorganize_redirections(t_ast *node);
+int					is_redirection_token(t_parser *parser);
 
 /* Pratt Parser */
 t_ast				*parse(t_token *tokens, t_list **env);
@@ -255,12 +289,21 @@ int					at_end(t_parser *parser);
 char				*get_env_value(char *key, t_list *envp);
 char				*expand_variables(char *value, t_list *envp,
 						int last_status, t_quote_type quote);
-// void			print_tokens(t_token *tokens);
-//
+
 /* Utils */
 void				ft_free_tab(char **tab);
 void				*ft_realloc(void *ptr, size_t size);
 void				exit_and_free(t_ast *node, int exit_code, char *message);
 void				close_fds(t_ast *node);
+
+/* Signals*/
+void				handle_sigint_interactive(int sig);
+void				handle_sigint_child(int sig);
+void				handle_sigquit_child(int sig);
+void				setup_interactive_signals(void);
+void				setup_child_signals(void);
+void				setup_heredoc_signals(void);
+int					ignore_signals(void);
+int					check_signal_status(void);
 
 #endif // MINISHELL_H

@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 14:38:27 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/24 14:42:44 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:16:42 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,6 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 {
 	t_ast			*left;
 	t_token_type	op_type;
-	t_ast			*redir;
 
 	left = parse_primary(parser, env);
 	if (!left)
@@ -26,24 +25,10 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 		&& precedence <= get_precedence(parser->current->type))
 	{
 		op_type = parser->current->type;
-		if (op_type == T_REDIR_IN || op_type == T_REDIR_OUT
-			|| op_type == T_APPEND || op_type == T_HEREDOC)
-		{
-			redir = parse_single_redirection(parser, env);
-			if (redir)
-			{
-				redir->left = left;
-				left = redir;
-			}
-		}
-		else if (op_type == T_PIPE || op_type == T_AND || op_type == T_OR)
-		{
-			advance(parser);
-			left = parse_binary(parser, left, op_type, env);
-		}
-		else
-			break ;
+		left = process_operator(parser, left, op_type, env);
 		if (!left)
+			break ;
+		if (!is_redirection_operator(op_type) && !is_binary_operator(op_type))
 			break ;
 	}
 	left = reorganize_redirections(left);

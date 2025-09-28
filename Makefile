@@ -3,9 +3,13 @@ NAME = minishell
 CFILES = src/ast/ast_free.c                          \
 	src/ast/ast_init.c                               \
 	src/ast/parser_commands.c                        \
+	src/ast/parser_command_utils.c                   \
+	src/ast/parser_command_utils2.c                  \
 	src/ast/parser_main.c                            \
+	src/ast/parser_main_utils.c						 \
 	src/ast/parser_operations.c                      \
 	src/ast/parser_redirections.c                    \
+	src/ast/parser_redirections_utils.c              \
 	src/ast/pratt_parser.c                           \
 	src/ast/pratt_parser_utils.c                     \
 	src/builtins/builtin_cd_pwd.c                    \
@@ -13,11 +17,15 @@ CFILES = src/ast/ast_free.c                          \
 	src/builtins/builtin_export_unset.c              \
 	src/envp/env.c                                   \
 	src/envp/envp.c                                  \
+	src/envp/envp_utils.c                            \
 	src/envp/env_init_append.c                       \
 	src/exec/exec.c                                  \
 	src/exec/exec_builtin.c                          \
 	src/exit/exit.c                                  \
-	src/lexer/lexer.c                                \
+	src/lexer/lexer_main.c                           \
+	src/lexer/lexer_handler.c                        \
+	src/lexer/lexer_utils.c                          \
+	src/lexer/lexer_handler_utils.c                  \
 	src/main.c                                       \
 	src/pipes/pipes.c                                \
 	src/token/token.c                                \
@@ -38,7 +46,7 @@ CFLAGS = -Wall -Wextra -Werror -ggdb3
 
 LFLAGS := -I${LIBFTDIR} -lreadline -lhistory
 
-all: ${NAME} 
+all: ${NAME}
 
 ${NAME}:  ${OBJS} ${LIBFT}
 	${CC} ${OBJS} ${LIBFT} ${LFLAGS} -o ${NAME}

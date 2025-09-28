@@ -6,45 +6,42 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/26 16:55:53 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/26 16:57:54 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:48:28 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-t_lexeme	handle_separator_simple(char *line, int *i)
+t_lexeme	handle_separator(char *line, int *i)
 {
 	t_lexeme	lex;
 
-	lex = (t_lexeme){NULL, Q_NONE};
 	if (!line)
+		return ((t_lexeme){NULL, Q_NONE});
+	lex = handle_double_separators(line, i);
+	if (lex.value)
 		return (lex);
-	if (ft_strncmp(line, "||", 2) == 0)
-		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
-	if (ft_strncmp(line, "|", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	if (ft_strncmp(line, "&&", 2) == 0)
-		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
-	if (ft_strncmp(line, "&", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	if (ft_strncmp(line, ">>", 2) == 0)
-		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
-	if (ft_strncmp(line, ">", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	if (ft_strncmp(line, "<<", 2) == 0)
-		return (*i += 2, lex.value = ft_substr(line, 0, 2), lex);
-	if (ft_strncmp(line, "<", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	if (ft_strncmp(line, "(", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	if (ft_strncmp(line, ")", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	if (ft_strncmp(line, ";", 1) == 0)
-		return (*i += 1, lex.value = ft_substr(line, 0, 1), lex);
-	return (lex);
+	return (handle_single_separators(line, i));
 }
 
+static int	find_quote_end(char *line, char quote)
+{
+	int	index;
 
+	index = 1;
+	while (line[index] && line[index] != quote)
+		index++;
+	return (index);
+}
+
+static t_quote_type	get_quote_type(char quote)
+{
+	if (quote == '\'')
+		return (Q_SIMPLE);
+	else if (quote == '"')
+		return (Q_DOUBLE);
+	return (Q_NONE);
+}
 
 t_lexeme	handle_quote(char *line, int *i)
 {
@@ -56,18 +53,17 @@ t_lexeme	handle_quote(char *line, int *i)
 	if (!line)
 		return (lex);
 	quote = line[0];
-	index = 1;
 	if (quote != '\'' && quote != '"')
 		return (lex);
-	while (line[index] && line[index] != quote)
-		index++;
+	index = find_quote_end(line, quote);
 	if (!line[index])
-		return (printf("minishell: syntax error: unclosed quote\n"), *i += index, lex);
+	{
+		printf("minishell: syntax error: unclosed quote\n");
+		*i += index;
+		return (lex);
+	}
 	lex.value = ft_substr(line, 1, index - 1);
-	if (quote == '\'')
-		lex.quote = Q_SIMPLE;
-	else
-		lex.quote = Q_DOUBLE;
+	lex.quote = get_quote_type(quote);
 	*i += index + 1;
 	return (lex);
 }
@@ -85,5 +81,7 @@ t_lexeme	handle_word(char *line, int *i)
 			index++;
 		index++;
 	}
-	return (*i += index, lex.value = ft_substr(line, 0, index), lex);
+	*i += index;
+	lex.value = ft_substr(line, 0, index);
+	return (lex);
 }

@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 12:58:08 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 12:58:09 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:23:49 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,17 +23,38 @@ char	**collect_args(t_parser *parser, int *count)
 		return (NULL);
 	while (check(parser, T_WORD))
 	{
-		if (!handle_capacity_resize(&args, &capacity, *count))
-			return (NULL);
-		if (!add_current_arg(&args, *count, parser))
+		if (!collect_single_arg(parser, &args, &capacity, *count))
 			return (NULL);
 		(*count)++;
-		advance(parser);
 		if (!should_continue_collection(parser))
 			break ;
 	}
 	args[*count] = NULL;
 	return (args);
+}
+
+static t_command	*create_command_from_args(char **args)
+{
+	t_command	*cmd;
+
+	cmd = init_cmd(args);
+	ft_free_tab(args);
+	return (cmd);
+}
+
+static t_ast	*create_command_node(t_command *cmd, t_list **env)
+{
+	t_ast	*node;
+
+	if (!cmd)
+		return (NULL);
+	node = init_cmd_node(cmd, env);
+	if (!node)
+	{
+		free_cmd(cmd);
+		return (NULL);
+	}
+	return (node);
 }
 
 t_ast	*parse_command(t_parser *parser, t_list **env)
@@ -49,17 +70,15 @@ t_ast	*parse_command(t_parser *parser, t_list **env)
 		error(parser, "Expected command");
 		return (NULL);
 	}
-	cmd = init_cmd(args);
-	ft_free_tab(args);
+	cmd = create_command_from_args(args);
 	if (!cmd)
 	{
 		error(parser, "Memory allocation failed");
 		return (NULL);
 	}
-	node = init_cmd_node(cmd, env);
+	node = create_command_node(cmd, env);
 	if (!node)
 	{
-		free_cmd(cmd);
 		error(parser, "Memory allocation failed");
 		return (NULL);
 	}

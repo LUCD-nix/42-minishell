@@ -1,102 +1,65 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   envp.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/28 13:36:19 by alvanaut          #+#    #+#             */
+/*   Updated: 2025/09/28 13:42:02 by alvanaut         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../../minishell.h"
 
-// char	*get_env_value(char *key, char **envp)
-// {
-// 	int		i;
-// 	size_t	len;
-//
-// 	if (!key || !envp)
-// 		return (NULL);
-// 	len = ft_strlen(key);
-// 	i = 0;
-// 	while (envp[i])
-// 	{
-// 		if (ft_strncmp(envp[i], key, len) == 0 && envp[i][len] == '=')
-// 			return (ft_strdup(envp[i] + len + 1));
-// 		i++;
-// 	}
-// 	return (ft_strdup(""));
-// }
-//
-static char	*expand_status(char *res, int *i, int last_status)
+static char	*handle_dollar_expansion(char *res, char *value, int *i,
+		t_expansion_data *data)
 {
-	char	*status;
-	char	*new_res;
-
-	status = ft_itoa(last_status);
-	if (!status)
-		return (res);
-	new_res = ft_strjoin(res, status);
-	free(status);
-	free(res);
 	(*i)++;
-	return (new_res);
+	if (value[*i] == '?')
+		return (expand_status(res, i, data->last_status));
+	else if (ft_isalnum(value[*i]) || value[*i] == '_')
+		return (expand_env_var(res, value, i, data->envp));
+	else
+		return (append_char(res, '$'));
 }
 
-static char	*expand_env_var(char *res, char *value, int *i, t_list *env)
+static char	*process_character(char *res, char *value, int *i,
+		t_expansion_data *data)
 {
-	int		start;
-	char	*key;
-	char	*val;
-	char	*new_res;
-
-	start = *i;
-	while (ft_isalnum(value[*i]) || value[*i] == '_')
-		(*i)++;
-	key = ft_substr(value, start, *i - start);
-	if (!key)
-		return (res);
-	val = env_get(env, key);
-	if (!val)
-		val = ft_strdup("");
-	new_res = ft_strjoin(res, val);
-	free(key);
-	free(res);
-	return (new_res);
+	if (value[*i] == '$')
+		return (handle_dollar_expansion(res, value, i, data));
+	else
+		return (append_char(res, value[(*i)++]));
 }
 
-static char	*append_char(char *res, char c)
+static char	*init_expansion_result(char *value, t_quote_type quote)
 {
-	char	buf[2];
-	char	*new_res;
-
-	buf[0] = c;
-	buf[1] = '\0';
-	new_res = ft_strjoin(res, buf);
-	free(res);
-	return (new_res);
-}
-
-char	*expand_variables(char *value, t_list *envp, int last_status, t_quote_type quote)
-{
-	char	*res;
-	int		i;
-
 	if (!value)
 		return (NULL);
 	if (quote == Q_SIMPLE)
 		return (ft_strdup(value));
-	res = ft_strdup("");
-	if (!res)
-		return (NULL);
+	return (ft_strdup(""));
+}
+
+char	*expand_variables(char *value, t_list *envp, int last_status,
+		t_quote_type quote)
+{
+	char				*res;
+	int					i;
+	t_expansion_data	data;
+
+	res = init_expansion_result(value, quote);
+	if (!res || quote == Q_SIMPLE)
+		return (res);
+	data.envp = envp;
+	data.last_status = last_status;
 	i = 0;
 	while (value[i])
 	{
-		if (value[i] == '$')
-		{
-			i++;
-			if (value[i] == '?')
-				res = expand_status(res, &i, last_status);
-			else if (ft_isalnum(value[i]) || value[i] == '_')
-				res = expand_env_var(res, value, &i, envp);
-			else
-				res = append_char(res, '$');
-		}
-		else
-			res = append_char(res, value[i++]);
+		res = process_character(res, value, &i, &data);
 		if (!res)
 			return (NULL);
 	}
 	return (res);
 }
-

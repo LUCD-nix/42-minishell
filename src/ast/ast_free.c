@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 14:38:40 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/24 14:38:41 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:30:40 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,4 +69,17 @@ int	is_builtin(char *value)
 		|| ft_strcmp(value, "exit") == 0)
 		return (1);
 	return (0);
+}
+
+t_command	*allocate_command(void)
+{
+	t_command	*cmd;
+
+	cmd = malloc(sizeof(t_command));
+	if (!cmd)
+		return (NULL);
+	cmd->argc = 0;
+	cmd->args = NULL;
+	cmd->path = NULL;
+	return (cmd);
 }

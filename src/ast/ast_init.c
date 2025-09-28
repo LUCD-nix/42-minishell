@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 14:38:36 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/24 14:38:37 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:30:33 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,31 +44,54 @@ t_ast	*init_cmd_node(t_command *cmd, t_list **env)
 	return (ast);
 }
 
+static int	count_args(char **args)
+{
+	int	count;
+
+	count = 0;
+	while (args[count])
+		count++;
+	return (count);
+}
+
+static char	**duplicate_args(char **args, int argc)
+{
+	char	**new_args;
+	int		i;
+
+	new_args = malloc(sizeof(char *) * (argc + 1));
+	if (!new_args)
+		return (NULL);
+	i = 0;
+	while (i < argc)
+	{
+		new_args[i] = ft_strdup(args[i]);
+		if (!new_args[i])
+		{
+			while (--i >= 0)
+				free(new_args[i]);
+			free(new_args);
+			return (NULL);
+		}
+		i++;
+	}
+	new_args[i] = NULL;
+	return (new_args);
+}
+
 t_command	*init_cmd(char **args)
 {
 	t_command	*cmd;
-	int			i;
 
 	if (!args || !args[0])
 		return (NULL);
-	cmd = malloc(sizeof(t_command));
+	cmd = allocate_command();
 	if (!cmd)
 		return (NULL);
-	cmd->argc = 0;
-	while (args[cmd->argc])
-		cmd->argc++;
-	cmd->args = malloc(sizeof(char *) * (cmd->argc + 1));
+	cmd->argc = count_args(args);
+	cmd->args = duplicate_args(args, cmd->argc);
 	if (!cmd->args)
 		return (free(cmd), NULL);
-	i = 0;
-	while (i < cmd->argc)
-	{
-		cmd->args[i] = ft_strdup(args[i]);
-		if (!cmd->args[i])
-			return (free_cmd(cmd), NULL);
-		i++;
-	}
-	cmd->args[i] = NULL;
 	cmd->path = ft_strdup(args[0]);
 	if (!cmd->path)
 		return (free_cmd(cmd), NULL);

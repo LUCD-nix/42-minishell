@@ -1,39 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   token.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/28 13:58:17 by alvanaut          #+#    #+#             */
+/*   Updated: 2025/09/28 14:06:51 by alvanaut         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../../minishell.h"
-
-t_token	*init_token(const char *line, t_token_type type, t_quote_type quote)
-{
-	t_token	*new;
-
-	new = malloc(sizeof(t_token));
-	if (!new)
-		return (NULL);
-	if (line)
-	{
-		new->value = ft_strdup(line);
-		if (!new->value)
-			return (free(new), NULL);
-	}
-	else
-		new->value = NULL;
-	new->type = type;
-	new->quote = quote;
-	new->next = NULL;
-	return (new);
-}
-
-void	free_token(t_token *token)
-{
-	t_token	*tmp;
-
-	while (token)
-	{
-		tmp = token;
-		token = token->next;
-		if (tmp->value)
-			free(tmp->value);
-		free(tmp);
-	}
-}
 
 t_token_type	get_token_type(char *token)
 {
@@ -60,11 +37,46 @@ t_token_type	get_token_type(char *token)
 	return (T_WORD);
 }
 
+static t_token	*create_token_from_lexeme(t_lexeme *lex, int i)
+{
+	return (init_token(lex[i].value, get_token_type(lex[i].value),
+			lex[i].quote));
+}
+
+static void	link_token_to_list(t_token **head, t_token **current,
+		t_token *new_node)
+{
+	if (!*head)
+	{
+		*head = new_node;
+		*current = new_node;
+	}
+	else
+	{
+		(*current)->next = new_node;
+		*current = (*current)->next;
+	}
+}
+
+static int	process_lexeme_at_index(t_lexeme *lex, int i, t_token **head,
+		t_token **current)
+{
+	t_token	*new_node;
+
+	new_node = create_token_from_lexeme(lex, i);
+	if (!new_node)
+	{
+		free_token(*head);
+		return (0);
+	}
+	link_token_to_list(head, current, new_node);
+	return (1);
+}
+
 t_token	*lexer_to_token(t_lexeme *lex)
 {
 	t_token	*head;
 	t_token	*current;
-	t_token	*new_node;
 	int		i;
 
 	if (!lex)
@@ -74,19 +86,8 @@ t_token	*lexer_to_token(t_lexeme *lex)
 	i = 0;
 	while (lex[i].value)
 	{
-		new_node = init_token(lex[i].value, get_token_type(lex[i].value), lex[i].quote);
-		if (!new_node)
-			return (free_token(head), NULL);
-		if (!head)
-		{
-			head = new_node;
-			current = new_node;
-		}
-		else
-		{
-			current->next = new_node;
-			current = current->next;
-		}
+		if (!process_lexeme_at_index(lex, i, &head, &current))
+			return (NULL);
 		i++;
 	}
 	return (head);
