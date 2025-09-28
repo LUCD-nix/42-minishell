@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 14:38:23 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/24 14:43:14 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 12:58:41 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,5 +72,3 @@ t_ast	*parse_primary(t_parser *parser, t_list **env)
 	error(parser, "Expected command or '('");
 	return (NULL);
 }
-
-
