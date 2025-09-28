@@ -345,5 +345,6 @@ int					handle_empty_line(char *line);
 int					handle_exit_command(char *line);
 int					process_parsed_line(t_token *tokens, t_list **envp, int *last_status);
 int					process_line(char *line, t_list **envp, int *last_status);
+void				print_welcome_message(void);
 
 #endif

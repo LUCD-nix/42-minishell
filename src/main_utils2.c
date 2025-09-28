@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main_utils2.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: alvanaut <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/28 16:58:09 by alvanaut          #+#    #+#             */
+/*   Updated: 2025/09/28 16:58:11 by alvanaut         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../minishell.h"
 
 int	handle_exit_command(char *line)
@@ -47,4 +59,10 @@ int	process_line(char *line, t_list **envp, int *last_status)
 	if (!tokens)
 		return (1);
 	return (process_parsed_line(tokens, envp, last_status));
+}
+
+void	print_welcome_message(void)
+{
+	printf("Minishell - Parsing Test Version\n");
+	printf("Type 'exit' to quit\n\n");
 }

@@ -14,12 +14,6 @@
 
 int	g_signal_received = 0;
 
-void	print_welcome_message(void)
-{
-	printf("Minishell - Parsing Test Version\n");
-	printf("Type 'exit' to quit\n\n");
-}
-
 char	*read_user_input(void)
 {
 	char	*line;
