@@ -16,13 +16,11 @@ void	close_fds(t_ast *node)
 {
 	if (node->fd_in != STDIN_FILENO)
 	{
-		if (close(node->fd_in) == -1)
-			perror("error closing in file");
+		close(node->fd_in);
 	}
 	if (node->fd_out != STDOUT_FILENO)
 	{
-		if (close(node->fd_out) == -1)
-			perror("error closing out file");
+		close(node->fd_out);
 	}
 	if (!isatty(STDIN_FILENO))
 	{

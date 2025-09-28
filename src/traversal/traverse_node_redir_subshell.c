@@ -19,25 +19,6 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
-void	redir_propagate_fd(t_ast *node, int file_fd)
-{
-	if (node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC)
-	{
-		node->left->fd_in = file_fd;
-		node->left->fd_out = node->fd_out;
-		if (node->fd_in != STDIN_FILENO
-			&& (dup2(node->fd_in, file_fd) == -1 || close(node->fd_in) == -1))
-			exit_and_free(node, EXIT_FAILURE, "error redirecting input");
-	}
-	else
-	{
-		node->left->fd_out = file_fd;
-		node->left->fd_in = node->fd_in;
-		if (node->fd_out != STDOUT_FILENO
-			&& (dup2(node->fd_out, file_fd) == -1 || close(node->fd_out) == -1))
-			exit_and_free(node, EXIT_FAILURE, "error redirecting output");
-	}
-}
 
 int	traverse_subshell(t_ast *node)
 {
@@ -59,6 +40,32 @@ int	traverse_subshell(t_ast *node)
 	return (res);
 }
 
+void	redir_propagate_fd(t_ast *node, int file_fd)
+{
+	if (node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC)
+	{
+		if (node->left != NULL)
+		{
+			node->left->fd_in = file_fd;
+			node->left->fd_out = node->fd_out;
+		}
+		if (node->fd_in != STDIN_FILENO && close(node->fd_in) == -1)
+			exit_and_free(node, EXIT_FAILURE, "error redirecting input");
+		node->fd_in = file_fd;
+	}
+	else
+	{
+		if (node->left != NULL)
+		{
+			node->left->fd_out = file_fd;
+			node->left->fd_in = node->fd_in;
+		}
+		if (node->fd_out != STDOUT_FILENO &&  close(node->fd_out) == -1)
+			exit_and_free(node, EXIT_FAILURE, "error redirecting output");
+		node->fd_out = file_fd;
+	}
+}
+
 int	traverse_redir(t_ast *node)
 {
 	t_file_desc	file_fd;
@@ -76,9 +83,15 @@ int	traverse_redir(t_ast *node)
 	else
 		file_fd = traverse_file(node, o_flags);
 	redir_propagate_fd(node, file_fd);
-	res = traverse_node(node->left);
-	close(file_fd);
-	return (res);
+	if (node->right == NULL)
+		res = traverse_node(node->left);
+	else
+	{
+		node->right->fd_in = node->fd_in;
+		node->right->fd_out = node->fd_out;
+		res = traverse_redir(node->right);
+	}
+	return (close(file_fd), res);
 }
 
 int	traverse_node(t_ast *node)

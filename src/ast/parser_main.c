@@ -31,7 +31,6 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 		if (!is_redirection_operator(op_type) && !is_binary_operator(op_type))
 			break ;
 	}
-	left = reorganize_redirections(left);
 	return (left);
 }
 

@@ -63,16 +63,6 @@ t_ast	*parse_single_redirection(t_parser *parser, t_list **env)
 	return (redir_node);
 }
 
-t_ast	*reorganize_redirections(t_ast *node)
-{
-	if (!node)
-		return (NULL);
-	if (node->type != NODE_REDIR_IN && node->type != NODE_REDIR_OUT
-		&& node->type != NODE_APPEND && node->type != NODE_HEREDOC)
-		return (node);
-	return (node);
-}
-
 int	is_redirection_token(t_parser *parser)
 {
 	return (parser->current && (parser->current->type == T_REDIR_IN

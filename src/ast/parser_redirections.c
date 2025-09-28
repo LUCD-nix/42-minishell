@@ -13,54 +13,52 @@
 #include "../../minishell.h"
 
 static t_ast	*link_redirection_chain(t_ast *bottom_redir,
-		t_ast *current_redir, t_ast *new_redir)
+		t_ast *new_redir, t_ast **top_redir)
 {
-	if (!bottom_redir)
+	if (!*top_redir)
 	{
 		bottom_redir = new_redir;
-		current_redir = bottom_redir;
+		*top_redir = new_redir;
 	}
 	else
 	{
-		new_redir->left = current_redir;
-		current_redir = new_redir;
+		bottom_redir->right = new_redir;
+		bottom_redir = new_redir;
 	}
-	return (current_redir);
+	return (bottom_redir);
 }
 
-t_ast	*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **env)
+t_ast	*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **env,
+		t_ast *top_redir)
 {
 	t_ast	*bottom_redir;
-	t_ast	*current_redir;
 	t_ast	*new_redir;
 
-	bottom_redir = NULL;
-	current_redir = NULL;
+	bottom_redir = top_redir;
+	while (top_redir != NULL && bottom_redir->right != NULL)
+		bottom_redir = bottom_redir->right;
 	while (is_redirection_token(parser))
 	{
 		new_redir = parse_single_redirection(parser, env);
 		if (!new_redir)
 		{
-			if (current_redir)
-				free_ast(current_redir);
+			free_ast(top_redir);
 			return (NULL);
 		}
-		current_redir = link_redirection_chain(bottom_redir, current_redir,
-				new_redir);
-		if (!bottom_redir)
-			bottom_redir = current_redir;
+		bottom_redir = link_redirection_chain(bottom_redir,
+				new_redir, &top_redir);
 	}
 	if (bottom_redir)
 		bottom_redir->left = cmd;
 	else
 		return (cmd);
-	return (current_redir);
+	return (top_redir);
 }
 
 static t_ast	*handle_prefix_redirections(t_parser *parser, t_list **env)
 {
 	if (is_redirection_token(parser))
-		return (collect_all_redirections(parser, NULL, env));
+		return (collect_all_redirections(parser, NULL, env, NULL));
 	return (NULL);
 }
 
@@ -71,8 +69,8 @@ static t_ast	*attach_prefix_to_command(t_ast *prefix_redirs, t_ast *cmd)
 	if (prefix_redirs)
 	{
 		temp = prefix_redirs;
-		while (temp->left)
-			temp = temp->left;
+		while (temp->right)
+			temp = temp->right;
 		temp->left = cmd;
 		return (prefix_redirs);
 	}
@@ -102,6 +100,6 @@ t_ast	*parse_command_with_redirections(t_parser *parser, t_list **env)
 		return (NULL);
 	}
 	result = attach_prefix_to_command(prefix_redirs, cmd);
-	result = collect_all_redirections(parser, result, env);
+	result = collect_all_redirections(parser, cmd, env, prefix_redirs);
 	return (result);
 }
