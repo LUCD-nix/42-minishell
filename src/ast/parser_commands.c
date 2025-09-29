@@ -12,10 +12,33 @@
 
 #include "../../minishell.h"
 
+static char	*concat_arg_tokens(t_parser *parser)
+{
+	char	*result;
+	char	*temp;
+
+	result = ft_strdup(parser->current->value);
+	if (!result)
+		return (NULL);
+	advance(parser);
+	while (check(parser, T_WORD) && parser->current
+		&& parser->current->quote != Q_NONE)
+	{
+		temp = ft_strjoin(result, parser->current->value);
+		free(result);
+		if (!temp)
+			return (NULL);
+		result = temp;
+		advance(parser);
+	}
+	return (result);
+}
+
 char	**collect_args(t_parser *parser, int *count)
 {
 	char	**args;
 	int		capacity;
+	char	*arg;
 
 	*count = 0;
 	args = init_args_array(&capacity);
@@ -23,8 +46,12 @@ char	**collect_args(t_parser *parser, int *count)
 		return (NULL);
 	while (check(parser, T_WORD))
 	{
-		if (!collect_single_arg(parser, &args, &capacity, *count))
+		if (!handle_capacity_resize(&args, &capacity, *count))
 			return (NULL);
+		arg = concat_arg_tokens(parser);
+		if (!arg)
+			return (ft_free_tab(args), NULL);
+		args[*count] = arg;
 		(*count)++;
 		if (!should_continue_collection(parser))
 			break ;

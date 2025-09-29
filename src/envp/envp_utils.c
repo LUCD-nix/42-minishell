@@ -27,6 +27,16 @@ char	*expand_status(char *res, int *i, int last_status)
 	return (new_res);
 }
 
+static char	*get_var_value(char *key, t_list *env)
+{
+	char	*val;
+
+	val = env_get(env, key);
+	if (!val)
+		return (ft_strdup(""));
+	return (ft_strdup(val));
+}
+
 char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 {
 	int		start;
@@ -40,11 +50,12 @@ char	*expand_env_var(char *res, char *value, int *i, t_list *env)
 	key = ft_substr(value, start, *i - start);
 	if (!key)
 		return (res);
-	val = env_get(env, key);
-	if (!val)
-		val = ft_strdup("");
-	new_res = ft_strjoin(res, val);
+	val = get_var_value(key, env);
 	free(key);
+	if (!val)
+		return (res);
+	new_res = ft_strjoin(res, val);
+	free(val);
 	free(res);
 	return (new_res);
 }

@@ -64,6 +64,22 @@ static int	export_no_args(t_ast *node)
 	return (EXIT_SUCCESS);
 }
 
+static int	is_valid_identifier(char *str)
+{
+	int	i;
+
+	if (!str || (!ft_isalpha(str[0]) && str[0] != '_'))
+		return (0);
+	i = 1;
+	while (str[i] && str[i] != '=')
+	{
+		if (!ft_isalnum(str[i]) && str[i] != '_')
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
 int	builtin_export(int argc, t_ast *node)
 {
 	t_list	**env_lst;
@@ -76,6 +92,12 @@ int	builtin_export(int argc, t_ast *node)
 	i = 0;
 	while (++i < argc)
 	{
+		if (!is_valid_identifier(node->command->args[i]))
+		{
+			ft_printf("minishell: export: `%s': not a valid identifier\n",
+				node->command->args[i]);
+			return (EXIT_FAILURE);
+		}
 		key = key_from_args(node, i);
 		if (!key)
 			return (EXIT_FAILURE);
