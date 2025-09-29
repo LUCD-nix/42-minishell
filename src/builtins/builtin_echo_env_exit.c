@@ -73,7 +73,7 @@ static int	atoi_wrapper(char *str, int *res)
 		if (!ft_isdigit(str[i]))
 			return (1);
 	}
-	if (ft_atoi(str) & ~255)
+	if (ft_atoi(str) >> 8)
 		return (1);
 	*res = ft_atoi(str);
 	return (0);

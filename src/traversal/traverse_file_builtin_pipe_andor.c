@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <stdlib.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 {
@@ -74,7 +75,7 @@ int	traverse_pipe(t_ast *node)
 	waitpid(pids[PIPE_LEFT], NULL, 0);
 	close(pipe_fd[PIPE_IN]);
 	waitpid(pids[PIPE_RIGHT], &res, 0);
-	return (close(pipe_fd[PIPE_OUT]), res);
+	return (close(pipe_fd[PIPE_OUT]), WEXITSTATUS(res));
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)
