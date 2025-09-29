@@ -37,7 +37,7 @@ t_ast	*collect_all_redirections(t_parser *parser, t_ast *cmd, t_list **env,
 	bottom_redir = top_redir;
 	while (top_redir != NULL && bottom_redir->right != NULL)
 		bottom_redir = bottom_redir->right;
-	if (cmd)
+	if (cmd && bottom_redir != NULL)
 		bottom_redir->left = NULL;
 	while (is_redirection_token(parser))
 	{
