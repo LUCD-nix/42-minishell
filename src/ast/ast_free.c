@@ -44,18 +44,23 @@ void	free_cmd(t_command *cmd)
 	}
 	if (cmd->path)
 		free(cmd->path);
+	*cmd = (t_command) { 0 };
 	free(cmd);
 }
 
 void	free_ast(t_ast *ast)
 {
-	if (!ast)
+	if (ast == NULL)
 		return ;
 	free_cmd(ast->command);
+	ast->command = NULL;
 	if (ast->filename)
 		free(ast->filename);
+	ast->filename = NULL;
 	free_ast(ast->left);
+	ast->left = NULL;
 	free_ast(ast->right);
+	ast->right = NULL;
 	free(ast);
 }
 
