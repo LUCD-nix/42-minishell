@@ -72,10 +72,7 @@ int	traverse_pipe(t_ast *node)
 		exit_and_free(node, EXIT_FAILURE, "error forking process");
 	if (pids[PIPE_RIGHT] == CHILD_PID)
 		pipe_right_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
-	waitpid(pids[PIPE_LEFT], NULL, 0);
-	close(pipe_fd[PIPE_IN]);
-	waitpid(pids[PIPE_RIGHT], &res, 0);
-	return (close(pipe_fd[PIPE_OUT]), WEXITSTATUS(res));
+	return (pipe_wait_for_children(pids, pipe_fd));
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)

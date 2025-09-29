@@ -222,6 +222,7 @@ void				pipe_right_routine(t_ast *node_pipe, int pipe_in,
 						int pipe_out);
 void				pipe_left_routine(t_ast *node_pipe, int pipe_in,
 						int pipe_out);
+int					pipe_wait_for_children(pid_t pids[2], int pipe_fd[2]);
 
 /*---Traversal---*/
 int					traverse_node(t_ast *node);
