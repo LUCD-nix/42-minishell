@@ -33,10 +33,17 @@ t_ast	*create_redirection_node(t_token_type redir_type, t_list **env)
 	return (redir_node);
 }
 
+static int	has_quotes(t_parser *parser)
+{
+	if (parser->current->quote != Q_NONE)
+		return (1);
+	return (0);
+}
+
 int	set_heredoc_quote_status(t_ast *redir_node, t_parser *parser)
 {
 	if (redir_node->type == NODE_HEREDOC)
-		redir_node->heredoc_quoted = (parser->current->quote != Q_NONE);
+		redir_node->heredoc_quoted = has_quotes(parser);
 	return (1);
 }
 

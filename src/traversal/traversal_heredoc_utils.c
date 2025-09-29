@@ -55,24 +55,16 @@ char	*clean_line_copy(char *line)
 
 int	is_delimiter_line(char *line, char *delimiter)
 {
-	int		delim_len;
-	int		line_len;
-	char	*line_copy;
-	int		result;
+	int	delim_len;
+	int	line_len;
 
 	if (!line || !delimiter)
 		return (0);
-	line_copy = clean_line_copy(line);
-	if (!line_copy)
-		return (0);
 	delim_len = ft_strlen(delimiter);
-	line_len = ft_strlen(line_copy);
+	line_len = ft_strlen(line);
 	if (delim_len != line_len)
-		result = 0;
-	else
-		result = (ft_strncmp(line_copy, delimiter, delim_len) == 0);
-	free(line_copy);
-	return (result);
+		return (0);
+	return (ft_strncmp(line, delimiter, delim_len) == 0);
 }
 
 int	should_expand_variables(t_ast *node)

@@ -12,21 +12,6 @@
 
 #include "../../minishell.h"
 
-char	*process_heredoc_line(char *line, t_ast *node)
-{
-	char	*expanded_line;
-
-	if (!line)
-		return (NULL);
-	if (should_expand_variables(node) && contains_variables(line))
-	{
-		expanded_line = expand_line_variables(line, node->env);
-		if (expanded_line && expanded_line != line)
-			return (expanded_line);
-	}
-	return (line);
-}
-
 void	write_processed_line(int fd, char *line, t_ast *node)
 {
 	char	*processed_line;
@@ -42,11 +27,21 @@ void	write_processed_line(int fd, char *line, t_ast *node)
 
 int	process_input_line(int tmp_file_write, char *line, t_ast *node)
 {
-	char	*original_line;
-
-	original_line = line;
 	write_processed_line(tmp_file_write, line, node);
-	free(original_line);
+	write(tmp_file_write, "\n", 1);
+	return (0);
+}
+
+static int	check_delimiter_and_process(char *line, char *delimiter,
+		int tmp_fd, t_ast *node)
+{
+	if (is_delimiter_line(line, delimiter))
+	{
+		free(line);
+		return (1);
+	}
+	process_input_line(tmp_fd, line, node);
+	free(line);
 	return (0);
 }
 
@@ -58,18 +53,23 @@ int	read_and_process_input(int tmp_file_write, t_ast *node)
 	clean_delimiter = get_clean_delimiter(node->filename);
 	if (!clean_delimiter)
 		return (-1);
-	line = get_next_line(STDIN_FILENO);
-	while (line && !is_delimiter_line(line, clean_delimiter))
+	setup_heredoc_signals();
+	while (1)
 	{
-		process_input_line(tmp_file_write, line, node);
-		line = get_next_line(STDIN_FILENO);
+		line = readline("> ");
+		if (!line)
+		{
+			ft_printf("minishell: warning: here-document delimited by");
+			ft_printf(" end-of-file (wanted `%s')\n", clean_delimiter);
+			free(clean_delimiter);
+			if (g_signal_received == SIGINT)
+				return (-1);
+			return (0);
+		}
+		if (check_delimiter_and_process(line, clean_delimiter,
+				tmp_file_write, node))
+			break ;
 	}
-	if (line == NULL)
-	{
-		free(clean_delimiter);
-		exit_and_free(node, EXIT_FAILURE, "heredoc: stdin read error");
-	}
-	free(line);
 	free(clean_delimiter);
 	return (0);
 }
@@ -78,15 +78,23 @@ int	traverse_heredoc(t_ast *node)
 {
 	int	tmp_file_read;
 	int	tmp_file_write;
+	int	read_status;
 
 	if (!node || !node->filename)
 		return (-1);
 	tmp_file_write = open("/var/tmp", O_RDWR | __O_TMPFILE, 0644);
 	if (tmp_file_write == -1)
 		exit_and_free(node, EXIT_FAILURE, "heredoc: tmp file error");
-	read_and_process_input(tmp_file_write, node);
+	read_status = read_and_process_input(tmp_file_write, node);
+	if (read_status == -1)
+	{
+		close(tmp_file_write);
+		setup_interactive_signals();
+		return (-1);
+	}
 	tmp_file_read = open_tmp_file(tmp_file_write);
 	close(tmp_file_write);
+	setup_interactive_signals();
 	if (tmp_file_read == -1)
 		exit_and_free(node, EXIT_FAILURE, "heredoc: error reopening tmp file");
 	return (tmp_file_read);

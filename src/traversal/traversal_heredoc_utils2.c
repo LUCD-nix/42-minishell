@@ -21,8 +21,8 @@ int	contains_variables(char *line)
 	i = 0;
 	while (line[i])
 	{
-		if (line[i] == '$' && line[i + 1] && (ft_isalnum(line[i + 1])
-				|| line[i + 1] == '_'))
+		if (line[i] == '$' && line[i + 1]
+			&& (ft_isalnum(line[i + 1]) || line[i + 1] == '_'))
 			return (1);
 		i++;
 	}

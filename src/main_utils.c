@@ -27,12 +27,14 @@ void	handle_interactive_signals(void)
 void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 {
 	t_token	*tmp;
+	t_token	*prev;
 	char	*expanded;
 
 	tmp = tokens;
+	prev = NULL;
 	while (tmp)
 	{
-		if (tmp->type == T_WORD)
+		if (tmp->type == T_WORD && (!prev || prev->type != T_HEREDOC))
 		{
 			expanded = expand_variables(tmp->value, envp, last_status,
 					tmp->quote);
@@ -42,6 +44,7 @@ void	expand_tokens(t_token *tokens, t_list *envp, int last_status)
 				tmp->value = expanded;
 			}
 		}
+		prev = tmp;
 		tmp = tmp->next;
 	}
 }
