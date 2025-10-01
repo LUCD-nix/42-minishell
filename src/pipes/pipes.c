@@ -43,6 +43,28 @@ void	pipe_right_routine(t_ast *node_pipe, int pipe_in, int pipe_out)
 	exit_and_free(node_pipe->right, traverse_node(node_pipe->right), NULL);
 }
 
+int	pipe_wait_for_children(pid_t pids[2], int pipe_fd[2])
+{
+	int	waiting;
+	int	w_status;
+	int	res;
+
+	waiting = 2;
+	res = -1;
+	while (waiting)
+	{
+		if (waitpid(-1, &w_status, 0) == pids[PIPE_RIGHT])
+		{
+			res = WEXITSTATUS(w_status);
+			close(pipe_fd[PIPE_OUT]);
+		}
+		else
+			close(pipe_fd[PIPE_IN]);
+		waiting--;
+	}
+	return (res);
+}
+
 void	pipe_propagate_fd(t_ast *node)
 {
 	node->left->fd_in = node->fd_in;

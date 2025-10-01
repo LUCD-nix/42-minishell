@@ -1,7 +1,5 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ast_free.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -44,7 +42,6 @@ void	free_cmd(t_command *cmd)
 	}
 	if (cmd->path)
 		free(cmd->path);
-	*cmd = (t_command){0};
 	free(cmd);
 }
 

@@ -24,7 +24,7 @@ int	builtin_echo(int argc, char **argv)
 		return (EXIT_SUCCESS);
 	}
 	i = 1;
-	write_new_line = ft_strncmp(argv[1], "-n", 3);
+	write_new_line = ft_strncmp(argv[1], "-n", 2);
 	if (!write_new_line)
 		i++;
 	while (i < argc)
@@ -73,7 +73,7 @@ static int	atoi_wrapper(char *str, int *res)
 		if (!ft_isdigit(str[i]))
 			return (1);
 	}
-	if (ft_atoi(str) & ~255)
+	if (ft_atoi(str) >> 8)
 		return (1);
 	*res = ft_atoi(str);
 	return (0);
