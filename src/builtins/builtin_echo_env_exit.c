@@ -10,7 +10,30 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
-#include <stdlib.h>
+
+static int	should_write_newline(char **argv, int *i)
+{
+	int		j;
+	int		res;
+	char	*argv_i;
+
+	res = 1;
+	while (argv[*i])
+	{
+		j = 0;
+		argv_i = argv[*i];
+		if (argv_i[j] != '-')
+			break ;
+		j++;
+		while (argv_i[j] && argv_i[j] == 'n')
+			j++;
+		if (argv_i[j] != 0)
+			break ;
+		*i += 1;
+		res = 0;
+	}
+	return (res);
+}
 
 int	builtin_echo(int argc, char **argv)
 {
@@ -24,9 +47,7 @@ int	builtin_echo(int argc, char **argv)
 		return (EXIT_SUCCESS);
 	}
 	i = 1;
-	write_new_line = ft_strncmp(argv[1], "-n", 2);
-	if (!write_new_line)
-		i++;
+	write_new_line = should_write_newline(argv, &i);
 	while (i < argc)
 	{
 		if (ft_printf("%s ", argv[i]) < 0)
