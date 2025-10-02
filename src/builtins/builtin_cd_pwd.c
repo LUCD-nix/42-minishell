@@ -27,7 +27,11 @@ static int	chdir_wrapper(char *to_change, t_list *env)
 {
 	int	res;
 
-	env_set(env, "OLDPWD", getcwd(NULL, 0));
+	if (env_set(env, "OLDPWD", getcwd(NULL, 0)) == -1)
+	{
+		env_lst_add(&env, "OLDPWD");
+		env_set(env, "OLDPWD",  getcwd(NULL, 0));
+	}
 	res = chdir(to_change);
 	if (res == 0)
 		env_set(env, "PWD", getcwd(NULL, 0));
