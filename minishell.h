@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/18 17:06:39 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/09/28 14:56:52 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/02 14:03:26 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -238,10 +238,21 @@ int					traverse_builtin(t_ast *node);
 int					traverse_andor(t_ast *node, t_node_type type);
 int					traverse_heredoc(t_ast *node);
 void				andor_propagate_fd(t_ast *node);
-
+int					traverse_redirect_builtin(t_ast *node, int *saved_in,
+						int *saved_out);
+int					handle_subshell_signal(int res);
+void				exec_subshell_child(t_ast *node);
+int					traverse_subshell(t_ast *node);
+void				redir_propagate_fd(t_ast *node, int file_fd);
+int					traverse_redir(t_ast *node);
+int					check_delimiter_and_process(char *line, char *delimiter,
+						int tmp_fd, t_ast *node);
 /*---Execution---*/
 int					exec_process(t_ast *command);
 int					exec_builtin(t_ast *builtin);
+int					exec_abs_path(t_ast *node);
+int					path_not_found(void);
+int					exec_get_path_loop(char **path_dirs, t_ast *node);
 
 /* parse commands */
 t_ast				*parse_command(t_parser *parser, t_list **env);
@@ -336,12 +347,16 @@ char				*process_heredoc_line(char *line, t_ast *node);
 void				process_character_bis(t_heredoc_expand *data);
 char				*expand_line_variables(char *line, t_list **env);
 void				expand_variable(t_heredoc_expand *data);
-void				write_processed_line(int fd, char *line, t_ast *node);
-int					process_input_line(int tmp_file_write, char *line,
-						t_ast *node);
 int					read_and_process_input(int tmp_file_write, t_ast *node);
 int					traverse_heredoc(t_ast *node);
-
+int					handle_heredoc_eof(char *line, char *delimiter);
+int					handle_signal_interruption(char *line, char *delimiter);
+int					process_heredoc_line_input(char *line, char *delimiter,
+						int tmp_fd, t_ast *node);
+int					handle_heredoc_eof(char *line, char *delimiter);
+int					handle_signal_interruption(char *line, char *delimiter);
+int					process_heredoc_line_input(char *line, char *delimiter,
+						int tmp_fd, t_ast *node);
 /* Main */
 void				handle_interactive_signals(void);
 void				expand_tokens(t_token *tokens, t_list *envp,

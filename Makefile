@@ -39,7 +39,12 @@ CFILES = src/ast/ast_free.c                          \
 	src/signals/signals_utils.c                      \
 	src/signals/signals.c                            \
 	src/main_utils.c                                 \
-	src/main_utils2.c
+	src/main_utils2.c                                \
+	src/traversal/traversal_heredoc_utils4.c         \
+	src/exec/exec_utils.c                            \
+	src/traversal/traverse_node_redir_subshell_utils.c \
+	src/traversal/traverse_file_builtin_pipe_andor_utils.c \
+	src/traversal/traversal_heredoc_utils5.c
 
 OBJS := $(CFILES:.c=.o)
 

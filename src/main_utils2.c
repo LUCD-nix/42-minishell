@@ -68,8 +68,11 @@ int	process_line(char *line, t_list **envp, int *last_status)
 	return (process_parsed_line(tokens, envp, last_status));
 }
 
-void	print_welcome_message(void)
+int	handle_empty_line(char *line)
 {
-	printf("Minishell - Parsing Test Version\n");
-	printf("Type 'exit' to quit\n\n");
+	if (!line)
+		return (0);
+	if (ft_strlen(line) == 0)
+		return (1);
+	return (-1);
 }

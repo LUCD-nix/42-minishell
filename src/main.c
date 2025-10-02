@@ -47,6 +47,11 @@ void	main_loop(t_list **my_envp, int *last_status)
 
 	while (1)
 	{
+		if (g_signal_received == SIGINT)
+		{
+			g_signal_received = 0;
+			*last_status = 130;
+		}
 		handle_interactive_signals();
 		line = read_user_input();
 		if (!line)
@@ -64,13 +69,13 @@ int	main(int argc, char **argv, char **envp)
 	t_list	*my_envp;
 	int		last_status;
 
-	(void)argc;
 	(void)argv;
+	if (argc != 1)
+		return (printf("Run only whit ./minishell\n"), 1);
 	setup_interactive_signals();
 	if (init_environment(envp, &my_envp))
 		return (1);
 	last_status = 0;
-	print_welcome_message();
 	main_loop(&my_envp, &last_status);
 	cleanup_and_exit(&my_envp, last_status);
 	return (last_status);

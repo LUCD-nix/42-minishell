@@ -1,99 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   traversal.c                                        :+:      :+:    :+:   */
+/*   traverse_node_redir_subshell.c                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
+/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 16:25:38 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/08/04 16:25:40 by lucorrei         ###   ########.fr       */
+/*   Updated: 2025/10/02 13:45:31 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 #include "../../minishell.h"
 
-void	andor_propagate_fd(t_ast *node)
+static int	get_redir_flags(t_node_type type)
 {
-	node->left->fd_in = node->fd_in;
-	node->left->fd_out = node->fd_out;
-	node->right->fd_in = node->fd_in;
-	node->right->fd_out = node->fd_out;
+	if (type == NODE_REDIR_IN)
+		return (O_RDONLY);
+	else if (type == NODE_REDIR_OUT)
+		return (O_WRONLY | O_CREAT | O_TRUNC);
+	else if (type == NODE_APPEND)
+		return (O_WRONLY | O_CREAT | O_APPEND);
+	return (0);
 }
 
-static int	handle_subshell_signal(int res)
-{
-	if (WIFSIGNALED(res))
-	{
-		if (WTERMSIG(res) == SIGINT)
-			return (130);
-		if (WTERMSIG(res) == SIGQUIT)
-			return (131);
-	}
-	return (WEXITSTATUS(res));
-}
-
-static void	exec_subshell_child(t_ast *node)
-{
-	setup_child_signals();
-	node->left->fd_in = node->fd_in;
-	node->left->fd_out = node->fd_out;
-	exit_and_free(node->left, traverse_node(node->left), NULL);
-}
-
-int	traverse_subshell(t_ast *node)
-{
-	int	status;
-	int	res;
-
-	status = fork();
-	res = -1;
-	if (status == -1)
-		exit_and_free(node, EXIT_FAILURE, "error forking subshell");
-	if (status == CHILD_PID)
-		exec_subshell_child(node);
-	ignore_signals();
-	waitpid(status, &res, 0);
-	setup_interactive_signals();
-	return (handle_subshell_signal(res));
-}
-
-void	redir_propagate_fd(t_ast *node, int file_fd)
-{
-	if (node->type == NODE_REDIR_IN || node->type == NODE_HEREDOC)
-	{
-		if (node->left != NULL)
-		{
-			node->left->fd_in = file_fd;
-			node->left->fd_out = node->fd_out;
-		}
-		if (node->fd_in != STDIN_FILENO && close(node->fd_in) == -1)
-			exit_and_free(node, EXIT_FAILURE, "error redirecting input");
-		node->fd_in = file_fd;
-	}
-	else
-	{
-		if (node->left != NULL)
-		{
-			node->left->fd_out = file_fd;
-			node->left->fd_in = node->fd_in;
-		}
-		if (node->fd_out != STDOUT_FILENO && close(node->fd_out) == -1)
-			exit_and_free(node, EXIT_FAILURE, "error redirecting output");
-		node->fd_out = file_fd;
-	}
-}
-
-int	traverse_redir(t_ast *node)
+static t_file_desc	open_redir_file(t_ast *node, int o_flags)
 {
 	t_file_desc	file_fd;
-	int			o_flags;
-	int			res;
 
-	if (node->type == NODE_REDIR_IN)
-		o_flags = O_RDONLY;
-	else if (node->type == NODE_REDIR_OUT)
-		o_flags = O_WRONLY | O_CREAT | O_TRUNC;
-	else if (node->type == NODE_APPEND)
-		o_flags = O_WRONLY | O_CREAT | O_APPEND;
 	if (node->type == NODE_HEREDOC)
 	{
 		file_fd = traverse_heredoc(node);
@@ -102,16 +35,32 @@ int	traverse_redir(t_ast *node)
 	}
 	else
 		file_fd = traverse_file(node, o_flags);
-	redir_propagate_fd(node, file_fd);
+	return (file_fd);
+}
+
+static int	traverse_next_redir(t_ast *node)
+{
 	if (node->right == NULL)
-		res = traverse_node(node->left);
-	else
-	{
-		node->right->fd_in = node->fd_in;
-		node->right->fd_out = node->fd_out;
-		res = traverse_redir(node->right);
-	}
-	return (close(file_fd), res);
+		return (traverse_node(node->left));
+	node->right->fd_in = node->fd_in;
+	node->right->fd_out = node->fd_out;
+	return (traverse_redir(node->right));
+}
+
+int	traverse_redir(t_ast *node)
+{
+	t_file_desc	file_fd;
+	int			o_flags;
+	int			res;
+
+	o_flags = get_redir_flags(node->type);
+	file_fd = open_redir_file(node, o_flags);
+	if (file_fd == -1)
+		return (-1);
+	redir_propagate_fd(node, file_fd);
+	res = traverse_next_redir(node);
+	close(file_fd);
+	return (res);
 }
 
 int	traverse_node(t_ast *node)
