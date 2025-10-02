@@ -32,3 +32,15 @@ void	handle_sigquit_child(int sig)
 	g_signal_received = sig;
 	write(STDOUT_FILENO, "Quit (core dumped)\n", 19);
 }
+
+void	handle_sigint_heredoc(int sig)
+{
+	extern int	rl_done;
+	char		c;
+
+	g_signal_received = sig;
+	rl_done = 1;
+	write(STDOUT_FILENO, "\n", 1);
+	c = '\n';
+	ioctl(STDIN_FILENO, TIOCSTI, &c);
+}

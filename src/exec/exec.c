@@ -106,11 +106,17 @@ static int	handle_signal_exit(int return_value)
 static void	exec_child_process(t_ast *process)
 {
 	char	**envp;
+	int		exec_result;
 
 	setup_child_signals();
 	envp = env_lst_to_str_array(*process->env);
 	init_process(process, envp);
-	execve(process->command->path, process->command->args, envp);
+	exec_result = execve(process->command->path, process->command->args, envp);
+	if (exec_result == -1)
+	{
+		ft_free_tab(envp);
+		exit_and_free(process, EXIT_FAILURE, "execve failed");
+	}
 }
 
 int	exec_process(t_ast *process)

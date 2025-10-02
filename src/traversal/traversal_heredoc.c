@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../minishell.h"
+#include <readline/readline.h>
 
 void	write_processed_line(int fd, char *line, t_ast *node)
 {
@@ -74,20 +75,15 @@ int	read_and_process_input(int tmp_file_write, t_ast *node)
 				free(line);
 			free(clean_delimiter);
 			g_signal_received = 0;
-			write(STDOUT_FILENO, "\n", 1);
 			return (-1);
 		}
 		if (handle_heredoc_eof(line, clean_delimiter))
-		{
-			free(clean_delimiter);
-			return (0);
-		}
+			return (free(clean_delimiter), 0);
 		if (check_delimiter_and_process(line, clean_delimiter,
 				tmp_file_write, node))
 			break ;
 	}
-	free(clean_delimiter);
-	return (0);
+	return (free(clean_delimiter), 0);
 }
 
 int	traverse_heredoc(t_ast *node)
@@ -104,9 +100,8 @@ int	traverse_heredoc(t_ast *node)
 	read_status = read_and_process_input(tmp_file_write, node);
 	if (read_status == -1)
 	{
-		close(tmp_file_write);
-		setup_interactive_signals();
-		return (-1);
+		return (close(tmp_file_write), setup_interactive_signals(),
+			rl_on_new_line(), rl_redisplay(),-1);
 	}
 	tmp_file_read = open_tmp_file(tmp_file_write);
 	close(tmp_file_write);

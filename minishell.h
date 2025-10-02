@@ -160,6 +160,12 @@ typedef struct s_heredoc_expand
 	t_list			**env;
 }					t_heredoc_expand;
 
+typedef struct s_filename
+{
+	char			*value;
+	int				has_quotes;
+}					t_filename;
+
 /* Lexer */
 char				*read_line(void);
 t_lexeme			create_separator_lexeme(char *line, int start, int len,
@@ -277,8 +283,6 @@ t_ast				*process_operator(t_parser *parser, t_ast *left,
 						t_token_type op_type, t_list **env);
 t_ast				*create_redirection_node(t_token_type redir_type,
 						t_list **env);
-int					set_heredoc_quote_status(t_ast *redir_node,
-						t_parser *parser);
 t_ast				*parse_single_redirection(t_parser *parser, t_list **env);
 t_ast				*reorganize_redirections(t_ast *node);
 int					is_redirection_token(t_parser *parser);
@@ -315,6 +319,7 @@ void				setup_child_signals(void);
 void				setup_heredoc_signals(void);
 int					ignore_signals(void);
 int					check_signal_status(void);
+void				handle_sigint_heredoc(int sig);
 
 /* Traversal Heredoc */
 t_file_desc			open_tmp_file(t_file_desc fd);

@@ -33,40 +33,52 @@ t_ast	*create_redirection_node(t_token_type redir_type, t_list **env)
 	return (redir_node);
 }
 
-static int	has_quotes(t_parser *parser)
+static t_filename	concat_quoted_tokens(t_parser *parser)
 {
-	if (parser->current->quote != Q_NONE)
-		return (1);
-	return (0);
-}
+	t_filename	result;
+	char		*temp;
 
-int	set_heredoc_quote_status(t_ast *redir_node, t_parser *parser)
-{
-	if (redir_node->type == NODE_HEREDOC)
-		redir_node->heredoc_quoted = has_quotes(parser);
-	return (1);
+	result.value = ft_strdup(parser->current->value);
+	if (!result.value)
+		return ((t_filename){NULL, 0});
+	result.has_quotes = (parser->current->quote != Q_NONE);
+	advance(parser);
+	while (check(parser, T_WORD) && parser->current
+		&& parser->current->quote != Q_NONE)
+	{
+		result.has_quotes = 1;
+		temp = ft_strjoin(result.value, parser->current->value);
+		free(result.value);
+		if (!temp)
+			return ((t_filename){NULL, 0});
+		result.value = temp;
+		advance(parser);
+	}
+	return (result);
 }
 
 t_ast	*parse_single_redirection(t_parser *parser, t_list **env)
 {
 	t_token_type	redir_type;
 	t_ast			*redir_node;
+	t_filename		fname;
 
 	redir_type = parser->current->type;
 	advance(parser);
 	if (!check(parser, T_WORD))
 		return (error(parser, "Expected filename after redirection"), NULL);
+	fname = concat_quoted_tokens(parser);
+	if (!fname.value)
+		return (error(parser, "Memory allocation failed"), NULL);
 	redir_node = create_redirection_node(redir_type, env);
 	if (!redir_node)
-		return (error(parser, "Unknown redirection type"), NULL);
-	set_heredoc_quote_status(redir_node, parser);
-	redir_node->filename = ft_strdup(parser->current->value);
-	if (!redir_node->filename)
 	{
-		free_ast(redir_node);
-		return (error(parser, "Memory allocation failed"), NULL);
+		free(fname.value);
+		return (error(parser, "Unknown redirection type"), NULL);
 	}
-	advance(parser);
+	if (redir_node->type == NODE_HEREDOC)
+		redir_node->heredoc_quoted = fname.has_quotes;
+	redir_node->filename = fname.value;
 	return (redir_node);
 }
 

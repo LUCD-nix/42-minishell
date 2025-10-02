@@ -47,7 +47,7 @@ void	setup_heredoc_signals(void)
 	struct sigaction	sa_int;
 	struct sigaction	sa_quit;
 
-	sa_int.sa_handler = handle_sigint_interactive;
+	sa_int.sa_handler = handle_sigint_heredoc;
 	sigemptyset(&sa_int.sa_mask);
 	sa_int.sa_flags = 0;
 	sigaction(SIGINT, &sa_int, NULL);
