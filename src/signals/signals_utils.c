@@ -39,7 +39,6 @@ void	handle_sigint_heredoc(int sig)
 	char		c;
 
 	g_signal_received = sig;
-	rl_done = 1;
 	write(STDOUT_FILENO, "\n", 1);
 	c = '\n';
 	ioctl(STDIN_FILENO, TIOCSTI, &c);
