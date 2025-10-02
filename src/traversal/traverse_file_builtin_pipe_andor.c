@@ -52,27 +52,45 @@ int	traverse_builtin(t_ast *node)
 	return (res);
 }
 
+static void	fork_pipe_left(t_ast *node, int *pipe_fd, pid_t *pids)
+{
+	pids[PIPE_LEFT] = fork();
+	if (pids[PIPE_LEFT] == -1)
+		exit_and_free(node, EXIT_FAILURE, "error forking process");
+	if (pids[PIPE_LEFT] == CHILD_PID)
+	{
+		setup_child_signals();
+		pipe_left_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
+	}
+}
+
+static void	fork_pipe_right(t_ast *node, int *pipe_fd, pid_t *pids)
+{
+	pids[PIPE_RIGHT] = fork();
+	if (pids[PIPE_RIGHT] == -1)
+		exit_and_free(node, EXIT_FAILURE, "error forking process");
+	if (pids[PIPE_RIGHT] == CHILD_PID)
+	{
+		setup_child_signals();
+		pipe_right_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
+	}
+}
+
 int	traverse_pipe(t_ast *node)
 {
 	int		res;
 	int		pipe_fd[2];
 	pid_t	pids[2];
 
-	res = -1;
 	pipe_propagate_fd(node);
 	if (pipe(pipe_fd) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error creating pipe");
-	pids[PIPE_LEFT] = fork();
-	if (pids[PIPE_LEFT] == -1)
-		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pids[PIPE_LEFT] == CHILD_PID)
-		pipe_left_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
-	pids[PIPE_RIGHT] = fork();
-	if (pids[PIPE_RIGHT] == -1)
-		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pids[PIPE_RIGHT] == CHILD_PID)
-		pipe_right_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
-	return (pipe_wait_for_children(pids, pipe_fd));
+	fork_pipe_left(node, pipe_fd, pids);
+	fork_pipe_right(node, pipe_fd, pids);
+	ignore_signals();
+	res = pipe_wait_for_children(pids, pipe_fd);
+	setup_interactive_signals();
+	return (res);
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)

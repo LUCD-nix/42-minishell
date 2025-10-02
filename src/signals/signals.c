@@ -45,12 +45,16 @@ void	setup_child_signals(void)
 void	setup_heredoc_signals(void)
 {
 	struct sigaction	sa_int;
+	struct sigaction	sa_quit;
 
-	sa_int.sa_handler = SIG_DFL;
+	sa_int.sa_handler = handle_sigint_interactive;
 	sigemptyset(&sa_int.sa_mask);
 	sa_int.sa_flags = 0;
 	sigaction(SIGINT, &sa_int, NULL);
-	signal(SIGQUIT, SIG_IGN);
+	sa_quit.sa_handler = SIG_IGN;
+	sigemptyset(&sa_quit.sa_mask);
+	sa_quit.sa_flags = 0;
+	sigaction(SIGQUIT, &sa_quit, NULL);
 }
 
 int	ignore_signals(void)

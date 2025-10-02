@@ -23,6 +23,7 @@ int	process_parsed_line(t_token *tokens, t_list **envp,
 		int *last_status)
 {
 	t_ast	*ast;
+	int		result;
 
 	expand_tokens(tokens, *envp, *last_status);
 	ast = parse(tokens, envp);
@@ -33,8 +34,14 @@ int	process_parsed_line(t_token *tokens, t_list **envp,
 		*last_status = 2;
 		return (1);
 	}
-	*last_status = traverse_node(ast);
+	result = traverse_node(ast);
 	free_ast(ast);
+	if (result == -1)
+	{
+		*last_status = 130;
+		return (1);
+	}
+	*last_status = result;
 	return (1);
 }
 

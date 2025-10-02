@@ -45,6 +45,17 @@ static int	check_delimiter_and_process(char *line, char *delimiter,
 	return (0);
 }
 
+static int	handle_heredoc_eof(char *line, char *delimiter)
+{
+	if (!line)
+	{
+		ft_printf("minishell: warning: here-document delimited by");
+		ft_printf(" end-of-file (wanted `%s')\n", delimiter);
+		return (1);
+	}
+	return (0);
+}
+
 int	read_and_process_input(int tmp_file_write, t_ast *node)
 {
 	char	*line;
@@ -57,13 +68,18 @@ int	read_and_process_input(int tmp_file_write, t_ast *node)
 	while (1)
 	{
 		line = readline("> ");
-		if (!line)
+		if (g_signal_received == SIGINT)
 		{
-			ft_printf("minishell: warning: here-document delimited by");
-			ft_printf(" end-of-file (wanted `%s')\n", clean_delimiter);
+			if (line)
+				free(line);
 			free(clean_delimiter);
-			if (g_signal_received == SIGINT)
-				return (-1);
+			g_signal_received = 0;
+			write(STDOUT_FILENO, "\n", 1);
+			return (-1);
+		}
+		if (handle_heredoc_eof(line, clean_delimiter))
+		{
+			free(clean_delimiter);
 			return (0);
 		}
 		if (check_delimiter_and_process(line, clean_delimiter,

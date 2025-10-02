@@ -19,6 +19,26 @@ void	andor_propagate_fd(t_ast *node)
 	node->right->fd_out = node->fd_out;
 }
 
+static int	handle_subshell_signal(int res)
+{
+	if (WIFSIGNALED(res))
+	{
+		if (WTERMSIG(res) == SIGINT)
+			return (130);
+		if (WTERMSIG(res) == SIGQUIT)
+			return (131);
+	}
+	return (WEXITSTATUS(res));
+}
+
+static void	exec_subshell_child(t_ast *node)
+{
+	setup_child_signals();
+	node->left->fd_in = node->fd_in;
+	node->left->fd_out = node->fd_out;
+	exit_and_free(node->left, traverse_node(node->left), NULL);
+}
+
 int	traverse_subshell(t_ast *node)
 {
 	int	status;
@@ -29,14 +49,11 @@ int	traverse_subshell(t_ast *node)
 	if (status == -1)
 		exit_and_free(node, EXIT_FAILURE, "error forking subshell");
 	if (status == CHILD_PID)
-	{
-		node->left->fd_in = node->fd_in;
-		node->left->fd_out = node->fd_out;
-		return (exit_and_free(node->left, traverse_node(node->left), NULL), 0);
-	}
-	else
-		waitpid(status, &res, 0);
-	return (res);
+		exec_subshell_child(node);
+	ignore_signals();
+	waitpid(status, &res, 0);
+	setup_interactive_signals();
+	return (handle_subshell_signal(res));
 }
 
 void	redir_propagate_fd(t_ast *node, int file_fd)
@@ -78,7 +95,11 @@ int	traverse_redir(t_ast *node)
 	else if (node->type == NODE_APPEND)
 		o_flags = O_WRONLY | O_CREAT | O_APPEND;
 	if (node->type == NODE_HEREDOC)
+	{
 		file_fd = traverse_heredoc(node);
+		if (file_fd == -1)
+			return (-1);
+	}
 	else
 		file_fd = traverse_file(node, o_flags);
 	redir_propagate_fd(node, file_fd);
@@ -115,57 +136,3 @@ int	traverse_node(t_ast *node)
 		res = traverse_subshell(node);
 	return (res);
 }
-//
-// int main(void)
-// {
-// 	extern char **environ;
-//
-// 	t_list *env = env_lst_from_str_arr(environ);
-//
-// 	t_ast	lsla = {
-// 		.type = NODE_CMD,
-// 		.command = &(t_command) {
-// 			.path = "/usr/bin/ls",
-// 			.args = (char *[3]) {"ls", "-la", NULL},
-// 		},
-// 		.env = &env,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 	};
-// 	t_ast	wcc = {
-// 		.type = NODE_CMD,
-// 		.command = &(t_command) {
-// 			.path = "/usr/bin/wc",
-// 			.args = (char *[3]) {"wc", "-c", NULL},
-// 		},
-// 		.env = &env,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 	};
-// 	t_ast	factor = {
-// 		.type = NODE_CMD,
-// 		.command = &(t_command) {
-// 			.path = "/usr/bin/factor",
-// 			.args = (char *[2]) {"factor", NULL},
-// 		},
-// 		.env = &env,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 	};
-// 	t_ast pipe1 = {
-// 		.type = NODE_PIPE,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 		.left = &lsla,
-// 		.right = &wcc,
-// 	};
-// 	t_ast pipe2  = {
-// 		.type = NODE_PIPE,
-// 		.fd_in = STDIN_FILENO,
-// 		.fd_out = STDOUT_FILENO,
-// 		.left = &pipe1,
-// 		.right = &factor,
-// 	};
-// 	traverse_node(&pipe2);
-// 	ft_lstclear(&env, env_free);
-// }

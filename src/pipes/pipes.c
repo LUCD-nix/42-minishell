@@ -43,6 +43,18 @@ void	pipe_right_routine(t_ast *node_pipe, int pipe_in, int pipe_out)
 	exit_and_free(node_pipe->right, traverse_node(node_pipe->right), NULL);
 }
 
+static int	get_signal_exit_code(int w_status)
+{
+	if (WIFSIGNALED(w_status))
+	{
+		if (WTERMSIG(w_status) == SIGINT)
+			return (130);
+		if (WTERMSIG(w_status) == SIGQUIT)
+			return (131);
+	}
+	return (WEXITSTATUS(w_status));
+}
+
 int	pipe_wait_for_children(pid_t pids[2], int pipe_fd[2])
 {
 	int	waiting;
@@ -55,7 +67,7 @@ int	pipe_wait_for_children(pid_t pids[2], int pipe_fd[2])
 	{
 		if (waitpid(-1, &w_status, 0) == pids[PIPE_RIGHT])
 		{
-			res = WEXITSTATUS(w_status);
+			res = get_signal_exit_code(w_status);
 			close(pipe_fd[PIPE_OUT]);
 		}
 		else

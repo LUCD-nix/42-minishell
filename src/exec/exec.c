@@ -28,11 +28,34 @@ static int	path_not_found(void)
 	return (-1);
 }
 
+static int	exec_get_path_loop(char **path_dirs, t_ast *node)
+{
+	char	*path;
+	int		i;
+
+	i = -1;
+	while (path_dirs[++i])
+	{
+		path = ft_strjoin(path_dirs[i], "/");
+		path = ft_strjoin_free_first(path, node->command->path);
+		if (access(path, X_OK) == 0)
+		{
+			free(node->command->path);
+			node->command->path = path;
+			ft_free_tab(path_dirs);
+			return (0);
+		}
+		free(path);
+	}
+	ft_free_tab(path_dirs);
+	perror("Error: program not in PATH");
+	return (-1);
+}
+
 static int	exec_get_path(t_ast *node)
 {
 	char	**path_dirs;
 	char	*path;
-	int		i;
 
 	if (*node->command->path == '.' || *node->command->path == '/')
 		return (exec_abs_path(node));
@@ -42,19 +65,7 @@ static int	exec_get_path(t_ast *node)
 	path_dirs = ft_split(path, ':');
 	if (path_dirs == NULL)
 		return (perror("minishell: split error in PATH"), -1);
-	i = -1;
-	while (path_dirs[++i])
-	{
-		path = ft_strjoin(path_dirs[i], "/");
-		path = ft_strjoin_free_first(path, node->command->path);
-		if (access(path, X_OK) == 0)
-		{
-			free(node->command->path);
-			return (node->command->path = path, ft_free_tab(path_dirs), 0);
-		}
-		free(path);
-	}
-	return (ft_free_tab(path_dirs), perror("Error: program not in PATH"), -1);
+	return (exec_get_path_loop(path_dirs, node));
 }
 
 void	init_process(t_ast *process, char **envp)
@@ -80,22 +91,41 @@ void	init_process(t_ast *process, char **envp)
 	}
 }
 
+static int	handle_signal_exit(int return_value)
+{
+	if (WIFSIGNALED(return_value))
+	{
+		if (WTERMSIG(return_value) == SIGINT)
+			return (130);
+		if (WTERMSIG(return_value) == SIGQUIT)
+			return (131);
+	}
+	return (WEXITSTATUS(return_value));
+}
+
+static void	exec_child_process(t_ast *process)
+{
+	char	**envp;
+
+	setup_child_signals();
+	envp = env_lst_to_str_array(*process->env);
+	init_process(process, envp);
+	execve(process->command->path, process->command->args, envp);
+}
+
 int	exec_process(t_ast *process)
 {
 	pid_t	pid;
 	int		return_value;
-	char	**envp;
 
 	return_value = -1;
 	pid = fork();
 	if (pid == -1)
 		exit_and_free(process, EXIT_FAILURE, "exec: error forking process");
 	if (pid == CHILD_PID)
-	{
-		envp = env_lst_to_str_array(*process->env);
-		init_process(process, envp);
-		execve(process->command->path, process->command->args, envp);
-	}
+		exec_child_process(process);
+	ignore_signals();
 	waitpid(pid, &return_value, 0);
-	return (return_value);
+	setup_interactive_signals();
+	return (handle_signal_exit(return_value));
 }
