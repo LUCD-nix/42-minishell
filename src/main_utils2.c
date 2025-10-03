@@ -30,7 +30,8 @@ int	process_parsed_line(t_token *tokens, t_list **envp,
 	free_token(tokens);
 	if (!ast)
 	{
-		perror("Parse error: Invalid syntax\n");
+		errno = EINVAL;
+		perror("Syntax error");
 		*last_status = 2;
 		return (1);
 	}
