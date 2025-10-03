@@ -30,9 +30,9 @@ CFILES = src/ast/ast_free.c                          \
 	src/pipes/pipes.c                                \
 	src/token/token.c                                \
 	src/token/utils.c                                \
-	src/traversal/traverse_file_builtin_pipe_andor.c \
+	src/traversal/travers_node_redir.c               \
 	src/traversal/traversal_heredoc.c                \
-	src/traversal/traverse_node_redir_subshell.c     \
+	src/traversal/traverse_builtin.c                 \
 	src/traversal/traversal_heredoc_utils.c          \
 	src/traversal/traversal_heredoc_utils2.c         \
 	src/traversal/traversal_heredoc_utils3.c         \
@@ -42,9 +42,9 @@ CFILES = src/ast/ast_free.c                          \
 	src/main_utils2.c                                \
 	src/traversal/traversal_heredoc_utils4.c         \
 	src/exec/exec_utils.c                            \
-	src/traversal/traverse_node_redir_subshell_utils.c \
-	src/traversal/traverse_file_builtin_pipe_andor_utils.c \
-	src/traversal/traversal_heredoc_utils5.c
+	src/traversal/traverse_file_pipe_andor.c         \
+	src/traversal/traversal_heredoc_utils5.c         \
+	src/traversal/traverse_subshell.c
 
 OBJS := $(CFILES:.c=.o)
 

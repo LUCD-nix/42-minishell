@@ -1,57 +1,55 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   traverse_file_builtin_pipe_andor.c                 :+:      :+:    :+:   */
+/*   traverse_file_pipe_andor.c                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/20 10:57:47 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/10/02 13:41:57 by alvanaut         ###   ########.fr       */
+/*   Created: 2025/10/03 17:16:18 by alvanaut          #+#    #+#             */
+/*   Updated: 2025/10/03 17:16:21 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
-#include <stdlib.h>
 
-static void	fork_pipe_left(t_ast *node, int *pipe_fd, pid_t *pids)
+static int	get_pipe_exit_status(int status)
 {
-	pids[PIPE_LEFT] = fork();
-	if (pids[PIPE_LEFT] == -1)
-		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pids[PIPE_LEFT] == CHILD_PID)
+	if (WIFSIGNALED(status))
 	{
-		setup_child_signals();
-		pipe_left_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
+		if (WTERMSIG(status) == SIGINT)
+			return (130);
+		if (WTERMSIG(status) == SIGQUIT)
+			return (131);
 	}
-}
-
-static void	fork_pipe_right(t_ast *node, int *pipe_fd, pid_t *pids)
-{
-	pids[PIPE_RIGHT] = fork();
-	if (pids[PIPE_RIGHT] == -1)
-		exit_and_free(node, EXIT_FAILURE, "error forking process");
-	if (pids[PIPE_RIGHT] == CHILD_PID)
-	{
-		setup_child_signals();
-		pipe_right_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
-	}
+	return (WEXITSTATUS(status));
 }
 
 int	traverse_pipe(t_ast *node)
 {
-	int		res;
+	int		status;
 	int		pipe_fd[2];
 	pid_t	pids[2];
 
 	pipe_propagate_fd(node);
 	if (pipe(pipe_fd) == -1)
 		exit_and_free(node, EXIT_FAILURE, "error creating pipe");
-	fork_pipe_left(node, pipe_fd, pids);
-	fork_pipe_right(node, pipe_fd, pids);
+	pids[PIPE_LEFT] = fork();
+	if (pids[PIPE_LEFT] == -1)
+		exit_and_free(node, EXIT_FAILURE, "error forking process");
+	if (pids[PIPE_LEFT] == CHILD_PID)
+		pipe_left_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
+	pids[PIPE_RIGHT] = fork();
+	if (pids[PIPE_RIGHT] == -1)
+		exit_and_free(node, EXIT_FAILURE, "error forking process");
+	if (pids[PIPE_RIGHT] == CHILD_PID)
+		pipe_right_routine(node, pipe_fd[PIPE_IN], pipe_fd[PIPE_OUT]);
+	close(pipe_fd[PIPE_IN]);
+	close(pipe_fd[PIPE_OUT]);
 	ignore_signals();
-	res = pipe_wait_for_children(pids, pipe_fd);
+	waitpid(pids[PIPE_LEFT], NULL, 0);
+	waitpid(pids[PIPE_RIGHT], &status, 0);
 	setup_interactive_signals();
-	return (res);
+	return (get_pipe_exit_status(status));
 }
 
 int	traverse_andor(t_ast *node, t_node_type type)

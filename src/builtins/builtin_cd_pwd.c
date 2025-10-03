@@ -3,13 +3,13 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_cd_pwd.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lucorrei <lucorrei@student.s19.be>         +#+  +:+       +#+        */
+/*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/27 10:28:17 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/08/27 10:28:21 by lucorrei         ###   ########.fr       */
+/*   Updated: 2025/10/03 17:16:40 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-#include "../../minishell.h"
+
 #include <asm-generic/errno-base.h>
 
 static int	get_home_dir(char *buf, t_list *env)
@@ -30,7 +30,7 @@ static int	chdir_wrapper(char *to_change, t_list *env)
 	if (env_set(env, "OLDPWD", getcwd(NULL, 0)) == -1)
 	{
 		env_lst_add(&env, "OLDPWD");
-		env_set(env, "OLDPWD",  getcwd(NULL, 0));
+		env_set(env, "OLDPWD", getcwd(NULL, 0));
 	}
 	res = chdir(to_change);
 	if (res == 0)
