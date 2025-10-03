@@ -31,7 +31,6 @@ t_env	env_from_str(char *str)
 	cursor++;
 	value = ft_calloc(ft_strlen(cursor) + 1, sizeof(char));
 	ft_strlcpy(value, cursor, ft_strlen(cursor) + 1);
-	printf("key is %s value is %s\n", key, value);
 	return ((t_env){.key = key, .value = value});
 }
 
@@ -39,7 +38,6 @@ t_list	*env_lst_add(t_list **lst, char *str)
 {
 	t_env	*tmp;
 
-	printf("adding %s to env\n", str);
 	tmp = ft_calloc(1, sizeof(t_env));
 	if (tmp == NULL)
 		return (NULL);
