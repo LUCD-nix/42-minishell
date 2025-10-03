@@ -83,6 +83,7 @@ int	env_set(t_list *env, char *key, char *value)
 		}
 		cursor = cursor->next;
 	}
+	free(value);
 	return (-1);
 }
 // int	main(void)
