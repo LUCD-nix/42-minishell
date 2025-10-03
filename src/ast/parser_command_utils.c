@@ -18,7 +18,7 @@ char	**resize_args_array(char **args, int *capacity)
 	int		i;
 
 	*capacity *= 2;
-	new_args = malloc(sizeof(char *) * (*capacity));
+	new_args = ft_calloc(*capacity, sizeof(char *));
 	if (!new_args)
 		return (NULL);
 	i = 0;
@@ -36,7 +36,7 @@ char	**init_args_array(int *capacity)
 	char	**args;
 
 	*capacity = 4;
-	args = malloc(sizeof(char *) * (*capacity));
+	args = ft_calloc(*capacity, sizeof(char *));
 	return (args);
 }
 

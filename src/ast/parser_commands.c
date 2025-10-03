@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 12:58:08 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 13:23:49 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/02 16:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,13 +16,16 @@ static char	*concat_arg_tokens(t_parser *parser)
 {
 	char	*result;
 	char	*temp;
+	int		first_quoted;
 
 	result = ft_strdup(parser->current->value);
 	if (!result)
 		return (NULL);
+	first_quoted = (parser->current->quote != Q_NONE);
 	advance(parser);
-	while (check(parser, T_WORD) && parser->current
-		&& parser->current->quote != Q_NONE)
+	if (!first_quoted)
+		return (result);
+	while (check(parser, T_WORD) && !should_continue_collection(parser))
 	{
 		temp = ft_strjoin(result, parser->current->value);
 		free(result);
@@ -41,6 +44,7 @@ char	**collect_args(t_parser *parser, int *count)
 	char	*arg;
 
 	*count = 0;
+	capacity = 4;
 	args = init_args_array(&capacity);
 	if (!args)
 		return (NULL);

@@ -111,4 +111,3 @@ int	init_environment(char **envp, t_list **my_envp)
 	}
 	return (0);
 }
-
