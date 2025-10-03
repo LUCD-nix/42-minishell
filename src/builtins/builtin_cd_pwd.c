@@ -63,16 +63,16 @@ int	builtin_cd(int argc, t_ast *node)
 	extern int	errno;
 
 	env = node->env;
-	if (!*home && get_home_dir(home, *env) == 1)
-		return (EXIT_FAILURE);
+	if (!*home)
+		get_home_dir(home, *env);
 	if (argc > 2)
 	{
 		errno = E2BIG;
 		perror("minishell: cd");
 		return (-1);
 	}
-	if (argc == 1)
-		return (chdir(home));
+	if (argc == 1 && chdir(home) == -1)
+		return (errno = 2, perror("cd: HOME not set"), -1);
 	else
 	{
 		if (ft_memcmp("-", node->command->args[1], 2) == 0)
