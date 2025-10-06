@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "../../minishell.h"
 #include <asm-generic/errno-base.h>
 
 static int	get_home_dir(char *buf, t_list *env)
