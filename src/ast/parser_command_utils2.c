@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 13:23:18 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 13:34:37 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/06 18:30:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,28 @@ int	collect_single_arg(t_parser *parser, char ***args, int *capacity,
 	return (1);
 }
 
+static int	process_quoted_section(char *str, int *i, char *result, int *j)
+{
+	char	quote;
+
+	quote = str[*i];
+	(*i)++;
+	while (str[*i] && str[*i] != quote)
+	{
+		result[*j] = str[*i];
+		(*j)++;
+		(*i)++;
+	}
+	if (str[*i] == quote)
+		(*i)++;
+	return (0);
+}
+
 char	*remove_quotes_from_value(char *str)
 {
 	char	*result;
 	int		i;
 	int		j;
-	char	quote;
 
 	if (!str)
 		return (NULL);
@@ -40,37 +56,38 @@ char	*remove_quotes_from_value(char *str)
 	while (str[i])
 	{
 		if (str[i] == '\'' || str[i] == '"')
-		{
-			quote = str[i];
-			i++;
-			while (str[i] && str[i] != quote)
-				result[j++] = str[i++];
-			if (str[i] == quote)
-				i++;
-		}
+			process_quoted_section(str, &i, result, &j);
 		else
 			result[j++] = str[i++];
 	}
 	return (result[j] = '\0', result);
 }
 
+static int	should_continue_concat(t_parser *parser)
+{
+	if (!check(parser, T_WORD))
+		return (0);
+	if (!parser->current)
+		return (0);
+	if (should_continue_collection(parser))
+		return (0);
+	return (1);
+}
+
 char	*concat_arg_tokens(t_parser *parser)
 {
 	char	*result;
-	char	*temp;
 	char	*cleaned;
 
 	result = ft_strdup(parser->current->value);
 	if (!result)
 		return (NULL);
 	advance(parser);
-	while (check(parser, T_WORD) && !should_continue_collection(parser))
+	while (should_continue_concat(parser))
 	{
-		temp = ft_strjoin(result, parser->current->value);
-		free(result);
-		if (!temp)
+		result = ft_strjoin_free_first(result, parser->current->value);
+		if (!result)
 			return (NULL);
-		result = temp;
 		advance(parser);
 	}
 	cleaned = remove_quotes_from_value(result);

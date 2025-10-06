@@ -6,44 +6,40 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 13:26:42 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/10/06 14:00:00 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/06 18:45:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-t_filename	init_filename_result(t_parser *parser)
+char	*join_token_value(char *current, char *to_add)
 {
-	t_filename	result;
+	char	*temp;
 
-	result.value = ft_strdup(parser->current->value);
-	if (!result.value)
-		return ((t_filename){NULL, 0});
-	result.has_quotes = (parser->current->quote != Q_NONE);
-	advance(parser);
-	return (result);
+	temp = ft_strjoin(current, to_add);
+	free(current);
+	return (temp);
 }
 
-int	contains_quotes(char *str)
+t_filename	concat_loop(t_parser *parser, t_filename result)
 {
-	int	i;
+	char	*temp;
 
-	if (!str)
-		return (0);
-	i = 0;
-	while (str[i])
+	while (check(parser, T_WORD) && parser->current)
 	{
-		if (str[i] == '\'' || str[i] == '"')
-			return (1);
-		i++;
+		update_quotes_flag(parser, &result);
+		temp = join_token_value(result.value, parser->current->value);
+		if (!temp)
+			return ((t_filename){NULL, 0});
+		result.value = temp;
+		advance(parser);
 	}
-	return (0);
+	return (result);
 }
 
 t_filename	concat_quoted_tokens(t_parser *parser)
 {
 	t_filename	result;
-	char		*temp;
 	char		*cleaned;
 
 	result = init_filename_result(parser);
@@ -51,18 +47,9 @@ t_filename	concat_quoted_tokens(t_parser *parser)
 		return (result);
 	if (contains_quotes(result.value))
 		result.has_quotes = 1;
-	while (check(parser, T_WORD) && parser->current)
-	{
-		if (parser->current->quote != Q_NONE
-			|| contains_quotes(parser->current->value))
-			result.has_quotes = 1;
-		temp = ft_strjoin(result.value, parser->current->value);
-		free(result.value);
-		if (!temp)
-			return ((t_filename){NULL, 0});
-		result.value = temp;
-		advance(parser);
-	}
+	result = concat_loop(parser, result);
+	if (!result.value)
+		return ((t_filename){NULL, 0});
 	cleaned = remove_quotes(result.value);
 	free(result.value);
 	if (!cleaned)

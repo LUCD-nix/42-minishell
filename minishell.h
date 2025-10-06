@@ -304,7 +304,9 @@ int					process_quote_section(char *str, int *i, char *result,
 						int *j);
 t_ast				*create_redirection_node(t_token_type redir_type,
 						t_list **env);
-
+t_filename			init_filename_result(t_parser *parser);
+int					contains_quotes(char *str);
+void				update_quotes_flag(t_parser *parser, t_filename *result);
 /* Pratt Parser */
 t_ast				*parse(t_token *tokens, t_list **env);
 t_precedence		get_precedence(t_token_type type);
