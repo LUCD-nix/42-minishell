@@ -56,7 +56,14 @@ int	traverse_redir(t_ast *node)
 	o_flags = get_redir_flags(node->type);
 	file_fd = open_redir_file(node, o_flags);
 	if (file_fd == -1)
-		return (-1);
+	{
+		if (g_signal_received == SIGINT)
+		{
+			g_signal_received = 0;
+			return (130);
+		}
+		return (1);
+	}
 	redir_propagate_fd(node, file_fd);
 	res = traverse_next_redir(node);
 	close(file_fd);

@@ -6,12 +6,21 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:41:41 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/10/02 14:01:41 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/06 00:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 #include <readline/readline.h>
+
+static int	handle_heredoc_interrupt(char *line, char *clean_delimiter)
+{
+	if (line)
+		free(line);
+	free(clean_delimiter);
+	g_signal_received = 0;
+	return (-1);
+}
 
 int	read_and_process_input(int tmp_file_write, t_ast *node)
 {
@@ -27,7 +36,14 @@ int	read_and_process_input(int tmp_file_write, t_ast *node)
 	{
 		line = readline("> ");
 		if (g_signal_received == SIGINT)
-			return (handle_signal_interruption(line, clean_delimiter));
+			return (handle_heredoc_interrupt(line, clean_delimiter));
+		if (!line)
+		{
+			ft_printf("minishell: warning: here-document delimited by");
+			ft_printf(" end-of-file (wanted `%s')\n", clean_delimiter);
+			free(clean_delimiter);
+			return (0);
+		}
 		process_result = process_heredoc_line_input(line, clean_delimiter,
 				tmp_file_write, node);
 		if (process_result != 1)

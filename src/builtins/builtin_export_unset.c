@@ -93,11 +93,8 @@ int	builtin_export(int argc, t_ast *node)
 	while (++i < argc)
 	{
 		if (!is_valid_identifier(node->command->args[i]))
-		{
-			ft_printf("minishell: export: `%s': not a valid identifier\n",
-				node->command->args[i]);
-			return (EXIT_FAILURE);
-		}
+			return (ft_printf("minishell: export: `%s': not a valid\
+					 identifier\n", node->command->args[i]), EXIT_FAILURE);
 		key = key_from_args(node, i);
 		if (!key)
 			return (EXIT_FAILURE);

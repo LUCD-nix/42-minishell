@@ -15,7 +15,7 @@ int	env_concat(char *str, t_list *env)
 {
 	char	*cursor;
 	char	*value;
-	
+
 	cursor = ft_strchr(str, '=');
 	*(cursor - 1) = '\0';
 	value = env_get(env, str);
