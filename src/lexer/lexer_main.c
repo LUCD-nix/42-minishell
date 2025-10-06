@@ -32,30 +32,19 @@ t_lexeme	*add_lexeme(t_lexeme *lexeme, t_lexeme lex, int count)
 	return (new_lexeme);
 }
 
-static int	get_lexeme_type(char *line, int i)
+int	get_lexeme_type(char *line, int i)
 {
 	int	sep_type;
 
 	sep_type = is_separator(&line[i]);
 	if (sep_type)
 		return (1);
-	
 	if ((line[i] == '\'' || line[i] == '"') && !is_quote_in_word(line, i))
 		return (2);
 	return (0);
 }
 
-static t_lexeme	get_lexeme_by_type(char *line, int *i, int lexeme_type)
-{
-	if (lexeme_type == 1)
-		return (handle_separator(&line[*i], i));
-	else if (lexeme_type == 2)
-		return (handle_quote(&line[*i], i));
-	else
-		return (handle_word(&line[*i], i));
-}
-
-static int	should_add_lexeme(t_lexeme lex, t_lexeme **lexeme, int *count)
+int	should_add_lexeme(t_lexeme lex, t_lexeme **lexeme, int *count)
 {
 	if (lex.value)
 	{
@@ -67,7 +56,7 @@ static int	should_add_lexeme(t_lexeme lex, t_lexeme **lexeme, int *count)
 	return (1);
 }
 
-static int	process_current_position(char *line, int *i, t_lexeme **lexeme,
+int	process_current_position(char *line, int *i, t_lexeme **lexeme,
 		int *count)
 {
 	t_lexeme	lex;

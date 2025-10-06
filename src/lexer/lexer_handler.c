@@ -12,19 +12,7 @@
 
 #include "../../minishell.h"
 
-t_lexeme	handle_separator(char *line, int *i)
-{
-	t_lexeme	lex;
-
-	if (!line)
-		return ((t_lexeme){NULL, Q_NONE});
-	lex = handle_double_separators(line, i);
-	if (lex.value)
-		return (lex);
-	return (handle_single_separators(line, i));
-}
-
-static int	find_quote_end(char *line, char quote)
+int	find_quote_end(char *line, char quote)
 {
 	int	index;
 
@@ -34,7 +22,7 @@ static int	find_quote_end(char *line, char quote)
 	return (index);
 }
 
-static t_quote_type	get_quote_type(char quote)
+t_quote_type	get_quote_type(char quote)
 {
 	if (quote == '\'')
 		return (Q_SIMPLE);
@@ -68,7 +56,7 @@ t_lexeme	handle_quote(char *line, int *i)
 	return (lex);
 }
 
-static int	skip_quoted_section(char *line, int index)
+int	skip_quoted_section(char *line, int index)
 {
 	char	quote;
 	int		start;

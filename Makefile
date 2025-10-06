@@ -44,7 +44,8 @@ CFILES = src/ast/ast_free.c                          \
 	src/exec/exec_utils.c                            \
 	src/traversal/traverse_file_pipe_andor.c         \
 	src/traversal/traversal_heredoc_utils5.c         \
-	src/traversal/traverse_subshell.c
+	src/traversal/traverse_subshell.c                \
+	src/ast/parser_redirections_utils2.c
 
 OBJS := $(CFILES:.c=.o)
 

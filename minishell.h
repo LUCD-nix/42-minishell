@@ -181,13 +181,13 @@ t_lexeme			*add_lexeme(t_lexeme *lexem, t_lexeme lex, int count);
 t_lexeme			handle_separator(char *line, int *i);
 int					is_separator(char *line);
 int					is_quote_in_word(char *line, int pos);
-
 /* Tokens */
 t_token				*init_token(const char *line, t_token_type type,
 						t_quote_type quote);
 void				free_token(t_token *token);
 t_token				*lexer_to_token(t_lexeme *lex);
 t_token_type		get_token_type(char *token);
+t_lexeme			get_lexeme_by_type(char *line, int *i, int lexeme_type);
 
 /* init_AST */
 t_ast				*init_ast_node(t_node_type type, t_list **env);
@@ -299,6 +299,11 @@ t_ast				*create_redirection_node(t_token_type redir_type,
 t_ast				*parse_single_redirection(t_parser *parser, t_list **env);
 t_ast				*reorganize_redirections(t_ast *node);
 int					is_redirection_token(t_parser *parser);
+char				*remove_quotes(char *str);
+int					process_quote_section(char *str, int *i, char *result,
+						int *j);
+t_ast				*create_redirection_node(t_token_type redir_type,
+						t_list **env);
 
 /* Pratt Parser */
 t_ast				*parse(t_token *tokens, t_list **env);
@@ -311,7 +316,8 @@ int					match(t_parser *parser, t_token_type type);
 int					check(t_parser *parser, t_token_type type);
 void				error(t_parser *parser, char *message);
 int					at_end(t_parser *parser);
-
+char				*concat_arg_tokens(t_parser *parser);
+char				*remove_quotes_from_value(char *str);
 /* Environment */
 char				*get_env_value(char *key, t_list *envp);
 char				*expand_variables(char *value, t_list *envp,

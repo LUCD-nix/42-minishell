@@ -67,4 +67,3 @@ void	free_lexemes(t_lexeme *lex)
 	}
 	free(lex);
 }
-

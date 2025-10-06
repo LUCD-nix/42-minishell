@@ -59,3 +59,25 @@ t_lexeme	handle_single_separators(char *line, int *i)
 		return (create_separator_lexeme(line, 0, 1, i));
 	return (empty_lex);
 }
+
+t_lexeme	handle_separator(char *line, int *i)
+{
+	t_lexeme	lex;
+
+	if (!line)
+		return ((t_lexeme){NULL, Q_NONE});
+	lex = handle_double_separators(line, i);
+	if (lex.value)
+		return (lex);
+	return (handle_single_separators(line, i));
+}
+
+t_lexeme	get_lexeme_by_type(char *line, int *i, int lexeme_type)
+{
+	if (lexeme_type == 1)
+		return (handle_separator(&line[*i], i));
+	else if (lexeme_type == 2)
+		return (handle_quote(&line[*i], i));
+	else
+		return (handle_word(&line[*i], i));
+}
