@@ -71,7 +71,7 @@ static int	is_valid_identifier(char *str)
 	if (!str || (!ft_isalpha(str[0]) && str[0] != '_'))
 		return (0);
 	i = 1;
-	while (str[i] && str[i] != '=')
+	while (str[i] && str[i] != '=' && str[i] != '+')
 	{
 		if (!ft_isalnum(str[i]) && str[i] != '_')
 			return (0);
@@ -101,6 +101,8 @@ int	builtin_export(int argc, t_ast *node)
 		key = key_from_args(node, i);
 		if (!key)
 			return (EXIT_FAILURE);
+		if (key[ft_strlen(key) - 1] == '+')
+			return (free(key), env_concat(node->command->args[i], *env_lst));
 		env_delete_key(env_lst, key);
 		env_lst_add(env_lst, node->command->args[i]);
 		free(key);

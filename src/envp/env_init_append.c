@@ -11,6 +11,22 @@
 /* ************************************************************************** */
 #include "../../minishell.h"
 
+int	env_concat(char *str, t_list *env)
+{
+	char	*cursor;
+	char	*value;
+	
+	cursor = ft_strchr(str, '=');
+	*(cursor - 1) = '\0';
+	value = env_get(env, str);
+	if (value == NULL)
+		return (EXIT_FAILURE);
+	value = ft_strjoin(value, cursor + 1);
+	if (!value)
+		return (EXIT_FAILURE);
+	return (env_set(env, str, value));
+}
+
 t_env	env_from_str(char *str)
 {
 	int		key_len;

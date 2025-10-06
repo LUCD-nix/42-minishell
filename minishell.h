@@ -216,6 +216,7 @@ char				*append_char(char *res, char c);
 /*--Env--*/
 t_list				*env_lst_add(t_list **lst, char *str);
 t_list				*env_lst_from_str_arr(char **to_copy);
+int					env_concat(char *str, t_list *env);
 char				**env_lst_to_str_array(t_list *env);
 char				*env_get(t_list *env, char *key);
 int					env_set(t_list *env, char *key, char *value);
