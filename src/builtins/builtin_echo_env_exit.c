@@ -120,7 +120,7 @@ int	builtin_exit(t_ast *node, int argc, char **argv, char **envp)
 		exit_and_free(node, EXIT_FAILURE, "exit: numeric argument required");
 	}
 	exit_and_free(node, exit_code, NULL);
-	return (EXIT_SUCCESS);
+	return (exit_code);
 }
 // int	main(void)
 // {
