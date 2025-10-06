@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../minishell.h"
+#include <unistd.h>
 
 int	traverse_redirect_builtin(t_ast *node, int *saved_in, int *saved_out)
 {
@@ -41,12 +42,16 @@ int	traverse_builtin(t_ast *node)
 	res = exec_builtin(node);
 	if (node->fd_in != STDIN_FILENO)
 	{
-		if (dup2(saved_in, STDIN_FILENO) == -1)
+		if (dup2(saved_in, STDIN_FILENO) == -1
+			|| close(saved_in) == -1
+			|| close(STDIN_FILENO) == -1)
 			exit_and_free(node, EXIT_FAILURE, "error restoring stdin");
 	}
 	if (node->fd_out != STDOUT_FILENO)
 	{
-		if (dup2(saved_out, STDOUT_FILENO) == -1)
+		if (dup2(saved_out, STDOUT_FILENO) == -1
+			|| close(saved_out) == -1
+			|| close(STDOUT_FILENO) == -1)
 			exit_and_free(node, EXIT_FAILURE, "error restoring stdout");
 	}
 	return (res);

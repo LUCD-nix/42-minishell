@@ -49,5 +49,6 @@ int	exec_builtin(t_ast *node)
 	else
 		res = exec_builtin2(node, argc, argv, envp);
 	ft_free_tab(envp);
+	close_fds(node);
 	return (res);
 }
