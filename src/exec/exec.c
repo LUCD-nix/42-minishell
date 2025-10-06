@@ -17,6 +17,8 @@ static int	exec_get_path(t_ast *node)
 	char	**path_dirs;
 	char	*path;
 
+	if (*node->command->path == '\0')
+		return (path_not_found());
 	if (*node->command->path == '.' || *node->command->path == '/')
 		return (exec_abs_path(node));
 	path = env_get(*node->env, "PATH");

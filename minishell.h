@@ -180,6 +180,7 @@ t_lexeme			*lexer(char *line);
 t_lexeme			*add_lexeme(t_lexeme *lexem, t_lexeme lex, int count);
 t_lexeme			handle_separator(char *line, int *i);
 int					is_separator(char *line);
+int					is_quote_in_word(char *line, int pos);
 
 /* Tokens */
 t_token				*init_token(const char *line, t_token_type type,

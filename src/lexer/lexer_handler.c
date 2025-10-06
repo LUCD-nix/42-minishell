@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   lexer_handler.c                                    :+:      :+:    :+:   */
+/*   lexer_handler.c - FIXED VERSION                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/26 16:55:53 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 13:48:28 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/06 00:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,21 @@ t_lexeme	handle_quote(char *line, int *i)
 	return (lex);
 }
 
+static int	skip_quoted_section(char *line, int index)
+{
+	char	quote;
+	int		start;
+
+	quote = line[index];
+	start = index;
+	index++;
+	while (line[index] && line[index] != quote)
+		index++;
+	if (line[index] == quote)
+		index++;
+	return (index - start);
+}
+
 t_lexeme	handle_word(char *line, int *i)
 {
 	int			index;
@@ -77,9 +92,16 @@ t_lexeme	handle_word(char *line, int *i)
 	index = 0;
 	while (line[index] && !is_separator(&line[index]) && line[index] != ' ')
 	{
-		if (line[index] == '\\' && line[index + 1])
+		if (line[index] == '\'' || line[index] == '"')
+		{
+			index += skip_quoted_section(&line[index], 0);
+		}
+		else
+		{
+			if (line[index] == '\\' && line[index + 1])
+				index++;
 			index++;
-		index++;
+		}
 	}
 	*i += index;
 	lex.value = ft_substr(line, 0, index);

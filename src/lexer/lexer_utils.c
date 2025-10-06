@@ -25,6 +25,13 @@ char	*read_line(void)
 	return (line);
 }
 
+int	is_quote_in_word(char *line, int pos)
+{
+	if (pos > 0 && line[pos - 1] != ' ' && !is_separator(&line[pos - 1]))
+		return (1);
+	return (0);
+}
+
 int	is_separator(char *line)
 {
 	if (!line)
@@ -37,8 +44,6 @@ int	is_separator(char *line)
 		|| ft_strncmp(line, "<", 1) == 0 || ft_strncmp(line, ";", 1) == 0
 		|| ft_strncmp(line, "&", 1) == 0)
 		return (1);
-	if (line[0] == '\'' || line[0] == '"')
-		return (2);
 	return (0);
 }
 
@@ -62,3 +67,4 @@ void	free_lexemes(t_lexeme *lex)
 	}
 	free(lex);
 }
+

@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 13:55:33 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/10/06 00:00:00 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/09/28 13:55:43 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ void	handle_sigint_interactive(int sig)
 void	handle_sigint_child(int sig)
 {
 	g_signal_received = sig;
+	write(STDOUT_FILENO, "\n", 1);
 }
 
 void	handle_sigquit_child(int sig)
@@ -34,12 +35,11 @@ void	handle_sigquit_child(int sig)
 
 void	handle_sigint_heredoc(int sig)
 {
-	char	newline;
+	extern int	rl_done;
+	char		c;
 
-	if (g_signal_received)
-		return ;
 	g_signal_received = sig;
-	write(STDOUT_FILENO, "^C\n", 3);
-	newline = '\n';
-	ioctl(STDIN_FILENO, TIOCSTI, &newline);
+	write(STDOUT_FILENO, "\n", 1);
+	c = '\0';
+	ioctl(STDIN_FILENO, TIOCSTI, &c);
 }

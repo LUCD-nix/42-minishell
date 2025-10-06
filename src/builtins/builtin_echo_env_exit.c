@@ -50,8 +50,10 @@ int	builtin_echo(int argc, char **argv)
 	write_new_line = should_write_newline(argv, &i);
 	while (i < argc)
 	{
-		if (ft_printf("%s ", argv[i]) < 0)
+		if (ft_printf("%s", argv[i]) < 0)
 			return (EXIT_FAILURE);
+		if (i + 1 != argc)
+			ft_printf(" ");
 		i++;
 	}
 	if (write_new_line)
