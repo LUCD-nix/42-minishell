@@ -104,7 +104,7 @@ int	init_environment(char **envp, t_list **my_envp)
 		*my_envp = env_lst_from_str_arr(envp);
 		if (!*my_envp)
 		{
-			perror("Error: Failed to copy environment\n");
+			perror("Error: Failed to initialize environment\n");
 			return (1);
 		}
 		increment_shlvl(my_envp);

@@ -58,7 +58,7 @@ t_lexeme	handle_quote(char *line, int *i)
 	index = find_quote_end(line, quote);
 	if (!line[index])
 	{
-		printf("minishell: syntax error: unclosed quote\n");
+		printf("minishell: syntax error: unexpected end of file\n");
 		*i += index;
 		return (lex);
 	}

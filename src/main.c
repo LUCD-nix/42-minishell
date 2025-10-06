@@ -69,9 +69,8 @@ int	main(int argc, char **argv, char **envp)
 	t_list	*my_envp;
 	int		last_status;
 
+	(void)argc;
 	(void)argv;
-	if (argc != 1)
-		return (printf("Run only whit ./minishell\n"), 1);
 	setup_interactive_signals();
 	if (init_environment(envp, &my_envp))
 		return (1);

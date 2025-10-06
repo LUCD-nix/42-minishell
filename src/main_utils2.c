@@ -31,7 +31,7 @@ int	process_parsed_line(t_token *tokens, t_list **envp,
 	if (!ast)
 	{
 		errno = EINVAL;
-		perror("Syntax error");
+		perror("Syntax error\n");
 		*last_status = 2;
 		return (1);
 	}
