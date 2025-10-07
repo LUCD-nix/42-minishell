@@ -6,12 +6,28 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:41:41 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/10/02 14:01:41 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/06 20:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 #include <readline/readline.h>
+
+static int	restore_stdin(void)
+{
+	int	new_stdin;
+
+	new_stdin = open("/dev/tty", O_RDONLY);
+	if (new_stdin == -1)
+		return (-1);
+	if (dup2(new_stdin, STDIN_FILENO) == -1)
+	{
+		close(new_stdin);
+		return (-1);
+	}
+	close(new_stdin);
+	return (0);
+}
 
 int	read_and_process_input(int tmp_file_write, t_ast *node)
 {
@@ -27,7 +43,11 @@ int	read_and_process_input(int tmp_file_write, t_ast *node)
 	{
 		line = readline("> ");
 		if (g_signal_received == SIGINT)
+		{
+			if (restore_stdin() == -1)
+				exit_and_free(node, EXIT_FAILURE, "heredoc: can't restore stdin");
 			return (handle_signal_interruption(line, clean_delimiter));
+		}
 		process_result = process_heredoc_line_input(line, clean_delimiter,
 				tmp_file_write, node);
 		if (process_result != 1)
