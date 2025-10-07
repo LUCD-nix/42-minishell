@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../minishell.h"
+#include <limits.h>
 
 static int	should_write_newline(char **argv, int *i)
 {
@@ -69,17 +70,18 @@ int	builtin_env(int argc, char **argv, char **envp)
 	int			i;
 
 	(void) argv;
-	i = 0;
+	i = -1;
 	if (argc != 1)
 	{
 		ft_printf("env : No arguments or flags supported!\n");
 		return (EXIT_FAILURE);
 	}
-	while (envp[i] != NULL)
+	while (envp[++i] != NULL)
 	{
+		if (*(ft_strchr(envp[i], '=') + 1) == '\0')
+			continue ;
 		if (ft_printf("%s\n", envp[i]) < 0)
 			return (EXIT_FAILURE);
-		i++;
 	}
 	return (EXIT_SUCCESS);
 }
@@ -96,9 +98,9 @@ static int	atoi_wrapper(char *str, int *res)
 		if (!ft_isdigit(str[i]))
 			return (1);
 	}
-	if (ft_atoi(str) >> 8)
+	if (ft_atol(str) > INT_MAX || ft_atol(str) < INT_MIN)
 		return (1);
-	*res = ft_atoi(str);
+	*res = ft_atoi(str) % 256;
 	return (0);
 }
 
@@ -118,8 +120,8 @@ int	builtin_exit(t_ast *node, int argc, char **argv, char **envp)
 		exit_and_free(node, EXIT_SUCCESS, NULL);
 	if (atoi_wrapper(argv[1], &exit_code) != 0)
 	{
-		errno = EINVAL;
-		exit_and_free(node, EXIT_FAILURE, "exit: numeric argument required");
+		errno = 2;
+		exit_and_free(node, 2, "exit: numeric argument required");
 	}
 	exit_and_free(node, exit_code, NULL);
 	return (exit_code);

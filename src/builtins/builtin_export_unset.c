@@ -57,7 +57,12 @@ static int	export_no_args(t_ast *node)
 	while (cursor != NULL)
 	{
 		temp = *(t_env *)cursor->content;
-		if (ft_printf("export %s=\"%s\"\n", temp.key, temp.value) < 0)
+		if (temp.value == NULL || *temp.value == '\0')
+		{
+			if (ft_printf("export %s\n", temp.key) < 0)
+				return (EXIT_FAILURE);
+		}
+		else if (ft_printf("export %s=\"%s\"\n", temp.key, temp.value) < 0)
 			return (EXIT_FAILURE);
 		cursor = cursor->next;
 	}
