@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 13:55:33 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/10/06 18:30:00 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/07 00:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,24 +16,28 @@ void	handle_sigint_interactive(int sig)
 {
 	g_signal_received = sig;
 	write(STDOUT_FILENO, "\n", 1);
-	rl_on_new_line();
 	rl_replace_line("", 0);
+	rl_on_new_line();
 	rl_redisplay();
 }
 
 void	handle_sigint_child(int sig)
 {
 	g_signal_received = sig;
+	write(STDOUT_FILENO, "\n", 1);
 }
 
 void	handle_sigquit_child(int sig)
 {
 	g_signal_received = sig;
+	write(STDOUT_FILENO, "Quit (core dumped)\n", 19);
 }
 
 void	handle_sigint_heredoc(int sig)
 {
+	char	newline;
+
+	newline = '\n';
 	g_signal_received = sig;
-	write(STDOUT_FILENO, "\n", 1);
-	close(STDIN_FILENO);
+	ioctl(STDIN_FILENO, TIOCSTI, &newline);
 }

@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/04 16:25:38 by lucorrei          #+#    #+#             */
-/*   Updated: 2025/10/02 13:39:42 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/07 00:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,9 +56,15 @@ static int	handle_signal_exit(int return_value)
 	if (WIFSIGNALED(return_value))
 	{
 		if (WTERMSIG(return_value) == SIGINT)
+		{
+			write(STDOUT_FILENO, "\n", 1);
 			return (130);
+		}
 		if (WTERMSIG(return_value) == SIGQUIT)
+		{
+			write(STDERR_FILENO, "Quit (core dumped)\n", 19);
 			return (131);
+		}
 	}
 	return (WEXITSTATUS(return_value));
 }
