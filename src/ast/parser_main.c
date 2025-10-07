@@ -25,10 +25,10 @@ t_ast	*parse_expression(t_parser *parser, t_precedence precedence,
 		&& precedence <= get_precedence(parser->current->type))
 	{
 		op_type = parser->current->type;
+		if (!is_binary_operator(op_type))
+			break ;
 		left = process_operator(parser, left, op_type, env);
 		if (!left)
-			break ;
-		if (!is_redirection_operator(op_type) && !is_binary_operator(op_type))
 			break ;
 	}
 	return (left);

@@ -285,7 +285,6 @@ t_ast				*parse_primary(t_parser *parser, t_list **env);
 
 /* Parse redirections */
 t_ast				*parse_single_redirection(t_parser *parser, t_list **env);
-t_ast				*reorganize_redirections(t_ast *node);
 t_ast				*collect_all_redirections(t_parser *parser, t_ast *cmd,
 						t_list **env, t_ast *top_redir);
 t_ast				*parse_command_with_redirections(t_parser *parser,
@@ -297,16 +296,16 @@ t_ast				*process_operator(t_parser *parser, t_ast *left,
 t_ast				*create_redirection_node(t_token_type redir_type,
 						t_list **env);
 t_ast				*parse_single_redirection(t_parser *parser, t_list **env);
-t_ast				*reorganize_redirections(t_ast *node);
 int					is_redirection_token(t_parser *parser);
 char				*remove_quotes(char *str);
 int					process_quote_section(char *str, int *i, char *result,
 						int *j);
-t_ast				*create_redirection_node(t_token_type redir_type,
-						t_list **env);
 t_filename			init_filename_result(t_parser *parser);
+int					filename_contains_quotes(char *str);
+char				*clean_filename(char *raw_filename);
 int					contains_quotes(char *str);
 void				update_quotes_flag(t_parser *parser, t_filename *result);
+
 /* Pratt Parser */
 t_ast				*parse(t_token *tokens, t_list **env);
 t_precedence		get_precedence(t_token_type type);

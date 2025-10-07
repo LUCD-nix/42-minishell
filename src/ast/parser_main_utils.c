@@ -6,7 +6,7 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 13:11:59 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/09/28 13:13:36 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/07 00:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,9 +34,7 @@ t_ast	*handle_binary_operator(t_parser *parser, t_ast *left,
 t_ast	*process_operator(t_parser *parser, t_ast *left, t_token_type op_type,
 		t_list **env)
 {
-	if (is_redirection_operator(op_type))
-		return (collect_all_redirections(parser, left, env, NULL));
-	else if (is_binary_operator(op_type))
+	if (is_binary_operator(op_type))
 		return (handle_binary_operator(parser, left, op_type, env));
 	return (left);
 }

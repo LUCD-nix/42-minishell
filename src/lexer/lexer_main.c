@@ -39,8 +39,6 @@ int	get_lexeme_type(char *line, int i)
 	sep_type = is_separator(&line[i]);
 	if (sep_type)
 		return (1);
-	if ((line[i] == '\'' || line[i] == '"') && !is_quote_in_word(line, i))
-		return (2);
 	return (0);
 }
 

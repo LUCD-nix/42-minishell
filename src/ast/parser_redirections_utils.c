@@ -6,80 +6,47 @@
 /*   By: alvanaut < alvanaut@student.s19.be >       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/28 13:26:42 by alvanaut          #+#    #+#             */
-/*   Updated: 2025/10/06 18:45:00 by alvanaut         ###   ########.fr       */
+/*   Updated: 2025/10/07 00:00:00 by alvanaut         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../minishell.h"
 
-char	*join_token_value(char *current, char *to_add)
+t_ast	*create_redirection_node(t_token_type redir_type, t_list **env)
 {
-	char	*temp;
+	t_ast	*redir_node;
 
-	temp = ft_strjoin(current, to_add);
-	free(current);
-	return (temp);
-}
-
-t_filename	concat_loop(t_parser *parser, t_filename result)
-{
-	char	*temp;
-
-	while (check(parser, T_WORD) && parser->current)
+	if (redir_type == T_REDIR_IN)
+		redir_node = init_ast_node(NODE_REDIR_IN, env);
+	else if (redir_type == T_REDIR_OUT)
+		redir_node = init_ast_node(NODE_REDIR_OUT, env);
+	else if (redir_type == T_APPEND)
+		redir_node = init_ast_node(NODE_APPEND, env);
+	else if (redir_type == T_HEREDOC)
 	{
-		update_quotes_flag(parser, &result);
-		temp = join_token_value(result.value, parser->current->value);
-		if (!temp)
-			return ((t_filename){NULL, 0});
-		result.value = temp;
-		advance(parser);
+		redir_node = init_ast_node(NODE_HEREDOC, env);
+		if (redir_node)
+			redir_node->heredoc_quoted = 0;
 	}
-	return (result);
-}
-
-t_filename	concat_quoted_tokens(t_parser *parser)
-{
-	t_filename	result;
-	char		*cleaned;
-
-	result = init_filename_result(parser);
-	if (!result.value)
-		return (result);
-	if (contains_quotes(result.value))
-		result.has_quotes = 1;
-	result = concat_loop(parser, result);
-	if (!result.value)
-		return ((t_filename){NULL, 0});
-	cleaned = remove_quotes(result.value);
-	free(result.value);
-	if (!cleaned)
-		return ((t_filename){NULL, 0});
-	return (result.value = cleaned, result);
-}
-
-t_ast	*parse_single_redirection(t_parser *parser, t_list **env)
-{
-	t_token_type	redir_type;
-	t_ast			*redir_node;
-	t_filename		fname;
-
-	redir_type = parser->current->type;
-	advance(parser);
-	if (!check(parser, T_WORD))
-		return (error(parser, "Expected filename after redirection"), NULL);
-	fname = concat_quoted_tokens(parser);
-	if (!fname.value)
-		return (error(parser, "Memory allocation failed"), NULL);
-	redir_node = create_redirection_node(redir_type, env);
-	if (!redir_node)
-	{
-		free(fname.value);
-		return (error(parser, "Unknown redirection type"), NULL);
-	}
-	if (redir_node->type == NODE_HEREDOC)
-		redir_node->heredoc_quoted = fname.has_quotes;
-	redir_node->filename = fname.value;
+	else
+		return (NULL);
 	return (redir_node);
+}
+
+int	filename_contains_quotes(char *str)
+{
+	int	i;
+
+	if (!str)
+		return (0);
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] == '\'' || str[i] == '"')
+			return (1);
+		i++;
+	}
+	return (0);
 }
 
 int	is_redirection_token(t_parser *parser)
@@ -88,4 +55,33 @@ int	is_redirection_token(t_parser *parser)
 			|| parser->current->type == T_REDIR_OUT
 			|| parser->current->type == T_APPEND
 			|| parser->current->type == T_HEREDOC));
+}
+
+char	*clean_filename(char *raw_filename)
+{
+	char	*cleaned;
+	int		i;
+	int		j;
+	char	quote;
+
+	cleaned = ft_calloc(ft_strlen(raw_filename) + 1, 1);
+	if (!cleaned)
+		return (NULL);
+	i = 0;
+	j = 0;
+	while (raw_filename[i])
+	{
+		if (raw_filename[i] == '\'' || raw_filename[i] == '"')
+		{
+			quote = raw_filename[i++];
+			while (raw_filename[i] && raw_filename[i] != quote)
+				cleaned[j++] = raw_filename[i++];
+			if (raw_filename[i] == quote)
+				i++;
+		}
+		else
+			cleaned[j++] = raw_filename[i++];
+	}
+	cleaned[j] = '\0';
+	return (cleaned);
 }

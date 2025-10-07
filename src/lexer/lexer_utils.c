@@ -25,13 +25,6 @@ char	*read_line(void)
 	return (line);
 }
 
-int	is_quote_in_word(char *line, int pos)
-{
-	if (pos > 0 && line[pos - 1] != ' ' && !is_separator(&line[pos - 1]))
-		return (1);
-	return (0);
-}
-
 int	is_separator(char *line)
 {
 	if (!line)
